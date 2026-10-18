@@ -234,68 +234,69 @@
     <!-- JavaScript Handling -->
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_45Y5Dwcl7lZAejkqUZch1d4Z9qT5PTOYW4Mcrs1JSqM3y5_16BjuHn3JoA7cxns82Q/exec';
+
         document.getElementById('userForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const statusDiv = document.getElementById('status');
-        const submitBtn = document.getElementById('submitBtn');
-
-        // 1. चेक करें कि कम से कम एक कोर्स सेलेक्ट किया गया है या नहीं
-        const checkedCourses = [];
-        document.querySelectorAll('input[name="courses"]:checked').forEach((checkbox) => {
-            checkedCourses.push(checkbox.value);
-        });
-
-        if (checkedCourses.length === 0) {
-            statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
-            statusDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-base"></i> कृपया कम से कम एक कोर्स (Course) अवश्य चुनें!';
-            statusDiv.classList.remove('hidden');
-            return; // फॉर्म आगे सबमिट नहीं होगा
-        }
-
-        // UI Loading state
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
-        
-        statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20';
-        statusDiv.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-base"></i> Submitting data, please wait...';
-        statusDiv.classList.remove('hidden');
-
-        const formData = new URLSearchParams();
-        formData.append('name', document.getElementById('name').value);
-        formData.append('pno', document.getElementById('pno').value);
-        formData.append('courses', checkedCourses.join(', '));
-
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Form';
-
-            if (data.result === 'exists') {
-                statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20';
-                statusDiv.innerHTML = '<i class="fa-solid fa-circle-exclamation text-base"></i> Data Already Submitted';
-            } else if (data.result === 'success') {
-                statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
-                statusDiv.innerHTML = '<i class="fa-solid fa-circle-check text-base"></i> Data submitted successfully!';
-                document.getElementById('userForm').reset();
-            } else {
-                statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
-                statusDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-base"></i> Error: ' + data.message;
-            }
-        })
-        .catch(error => {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Form';
+            e.preventDefault();
             
-            statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20';
-            statusDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-base"></i> Error submitting form. Please try again.';
-            console.error('Error:', error);
+            const statusDiv = document.getElementById('status');
+            const submitBtn = document.getElementById('submitBtn');
+
+            // 1. चेक करें कि कम से कम एक कोर्स सेलेक्ट किया गया है या नहीं
+            const checkedCourses = [];
+            document.querySelectorAll('input[name="courses"]:checked').forEach((checkbox) => {
+                checkedCourses.push(checkbox.value);
+            });
+
+            if (checkedCourses.length === 0) {
+                statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
+                statusDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-base"></i> कृपया कम से कम एक कोर्स (Course) अवश्य चुनें!';
+                statusDiv.classList.remove('hidden');
+                return; // फॉर्म आगे सबमिट नहीं होगा
+            }
+
+            // UI Loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            
+            statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20';
+            statusDiv.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-base"></i> Submitting data, please wait...';
+            statusDiv.classList.remove('hidden');
+
+            const formData = new URLSearchParams();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('pno', document.getElementById('pno').value);
+            formData.append('courses', checkedCourses.join(', '));
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Form';
+
+                if (data.result === 'exists') {
+                    statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20';
+                    statusDiv.innerHTML = '<i class="fa-solid fa-circle-exclamation text-base"></i> Data Already Submitted';
+                } else if (data.result === 'success') {
+                    statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+                    statusDiv.innerHTML = '<i class="fa-solid fa-circle-check text-base"></i> Data submitted successfully!';
+                    document.getElementById('userForm').reset();
+                } else {
+                    statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
+                    statusDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-base"></i> Error: ' + data.message;
+                }
+            })
+            .catch(error => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Form';
+                
+                statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20';
+                statusDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-base"></i> Error submitting form. Please try again.';
+                console.error('Error:', error);
+            });
         });
-    });
     </script>
 </body>
 </html>
