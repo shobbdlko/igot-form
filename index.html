@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iGOT Karmyogi Course Status Form</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+    .form-group { margin-bottom: 15px; }
+    label { font-weight: bold; display: block; margin-bottom: 5px; }
+    .checkbox-group label { font-weight: normal; display: inline-block; margin-right: 15px; }
+    input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background-color: #45a049; }
+    #status { margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h2>iGOT Karmyogi Course Status Form PS BBD LKO</h2>
+  
+  <form id="userForm">
+    <div class="form-group">
+      <label for="name">ENTER YOUR NAME:</label>
+      <input type="text" id="name" name="name" required>
+      <br><br>
+      <label for="pno">ENTER YOUR PNO:</label>
+      <input type="text" id="pno" name="pno" required>
+    </div>
+
+    <div class="form-group checkbox-group">
+      <label>Courses (Check all You Can Complete):</label><br>
+      <input type="checkbox" id="Course 1" name="courses" value="Course 1">
+      <label for="Course 1">अग्नि सुरक्षा: मूल सिद्धान्त एवं आपात प्रतिक्रिया (01.08.2026)</label><br>
+      <input type="checkbox" id="Course 2" name="courses" value="Course 2">
+      <label for="Course 2">आर्टिफिशियल इंटेलिजेंस की मूल बातें सीखना अनुप्रयोग और नैतिकता (08.08.2026)</label><br>
+      <input type="checkbox" id="Course 3" name="courses" value="Course 3">
+      <label for="Course 3">कार्यस्थल पर महिलाओं के यौन उत्पीड़न की रोकथाम (15.08.2026)</label><br>
+      <input type="checkbox" id="Course 4" name="courses" value="Course 4">
+      <label for="Course 4">वित्तीय धोखाधड़ी: डिजिटल अरेस्ट स्कैम से बचाव (22.08.2026)</label><br>
+      <input type="checkbox" id="Course 5" name="courses" value="Course 5">
+      <label for="Course 5">मृत्यु पूर्व कथन: विधिक प्रक्रिया एवं साक्ष्यिक महत्व (29.08.2026)</label><br>
+      <input type="checkbox" id="Course 6" name="courses" value="Course 6">
+      <label for="Course 6">जमानत के विधिक प्रावधान (05.09.2026)</label><br>
+      <input type="checkbox" id="Course 7" name="courses" value="Course 7">
+      <label for="Course 7">रिमांड की अवधारणा और विधिक प्रावधान (12.09.2026)</label><br>
+      <input type="checkbox" id="Course 8" name="courses" value="Course 8">
+      <label for="Course 8">आपराधिक मानव वध एवं हत्या और मॉब लिन्चिंग (19.09.2026)</label><br>
+      <input type="checkbox" id="Course 9" name="courses" value="Course 9">
+      <label for="Course 9">दैनिक जीवन के लिए आवश्यक डिजिटल कौशल (26.09.2026)</label><br>
+      <input type="checkbox" id="Course 10" name="courses" value="Course 10">
+      <label for="Course 10">Principles of Natural Justice (Hindi) (03.10.2026)</label><br>
+      <input type="checkbox" id="Course 11" name="courses" value="Course 11">
+      <label for="Course 11">मादक पदार्थों का नमूना संग्रह और साक्ष्य प्रबंधन (10.10.2026)</label><br>
+      <input type="checkbox" id="Course 12" name="courses" value="Course 12">
+      <label for="Course 12">सड़क सुरक्षा एवं यातायात अनुशासनःमूल सिद्धांत एवं व्यावहारिक समझ (17.10.2026)</label><br>
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+
+  <div id="status"></div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxazuXemqLG2dfCpLT5FSyn5ag9bEP-CihPL_N6kP5KlfArqmThvE6dlFLduHbv6gPu/exec';
+
+    document.getElementById('userForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = 'Submitting...';
+      statusDiv.style.color = 'black';
+
+      const checkedCourses = [];
+      document.querySelectorAll('input[name="courses"]:checked').forEach((checkbox) => {
+        checkedCourses.push(checkbox.value);
+      });
+
+      const formData = new URLSearchParams();
+      formData.append('name', document.getElementById('name').value);
+      formData.append('pno', document.getElementById('pno').value);
+      formData.append('courses', checkedCourses.join(', '));
+
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.result === 'exists') {
+          statusDiv.style.color = 'red';
+          statusDiv.textContent = 'Data Already Submitted';
+        } else if (data.result === 'success') {
+          statusDiv.style.color = 'green';
+          statusDiv.textContent = 'Data submitted successfully!';
+          document.getElementById('userForm').reset();
+        } else {
+          statusDiv.style.color = 'red';
+          statusDiv.textContent = 'Error: ' + data.message;
+        }
+      })
+      .catch(error => {
+        statusDiv.style.color = 'red';
+        statusDiv.textContent = 'Error submitting form. Check console.';
+        console.error('Error:', error);
+      });
+    });
+  </script>
+
+</body>
+</html>
