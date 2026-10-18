@@ -1,110 +1,309 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>iGOT Karmyogi Course Status Form</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
-    .form-group { margin-bottom: 15px; }
-    label { font-weight: bold; display: block; margin-bottom: 5px; }
-    .checkbox-group label { font-weight: normal; display: inline-block; margin-right: 15px; }
-    input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; }
-    button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
-    button:hover { background-color: #45a049; }
-    #status { margin-top: 15px; font-weight: bold; }
-  </style>
-</head>
-<body>
-
-  <h2>iGOT Karmyogi Course Status Form PS BBD LKO</h2>
-  
-  <form id="userForm">
-    <div class="form-group">
-      <label for="name">ENTER YOUR NAME:</label>
-      <input type="text" id="name" name="name" required>
-      <br><br>
-      <label for="pno">ENTER YOUR PNO:</label>
-      <input type="text" id="pno" name="pno" required>
-    </div>
-
-    <div class="form-group checkbox-group">
-      <label>Courses (Check all You Can Complete):</label><br>
-      <input type="checkbox" id="Course 1" name="courses" value="Course 1">
-      <label for="Course 1">अग्नि सुरक्षा: मूल सिद्धान्त एवं आपात प्रतिक्रिया (01.08.2026)</label><br>
-      <input type="checkbox" id="Course 2" name="courses" value="Course 2">
-      <label for="Course 2">आर्टिफिशियल इंटेलिजेंस की मूल बातें सीखना अनुप्रयोग और नैतिकता (08.08.2026)</label><br>
-      <input type="checkbox" id="Course 3" name="courses" value="Course 3">
-      <label for="Course 3">कार्यस्थल पर महिलाओं के यौन उत्पीड़न की रोकथाम (15.08.2026)</label><br>
-      <input type="checkbox" id="Course 4" name="courses" value="Course 4">
-      <label for="Course 4">वित्तीय धोखाधड़ी: डिजिटल अरेस्ट स्कैम से बचाव (22.08.2026)</label><br>
-      <input type="checkbox" id="Course 5" name="courses" value="Course 5">
-      <label for="Course 5">मृत्यु पूर्व कथन: विधिक प्रक्रिया एवं साक्ष्यिक महत्व (29.08.2026)</label><br>
-      <input type="checkbox" id="Course 6" name="courses" value="Course 6">
-      <label for="Course 6">जमानत के विधिक प्रावधान (05.09.2026)</label><br>
-      <input type="checkbox" id="Course 7" name="courses" value="Course 7">
-      <label for="Course 7">रिमांड की अवधारणा और विधिक प्रावधान (12.09.2026)</label><br>
-      <input type="checkbox" id="Course 8" name="courses" value="Course 8">
-      <label for="Course 8">आपराधिक मानव वध एवं हत्या और मॉब लिन्चिंग (19.09.2026)</label><br>
-      <input type="checkbox" id="Course 9" name="courses" value="Course 9">
-      <label for="Course 9">दैनिक जीवन के लिए आवश्यक डिजिटल कौशल (26.09.2026)</label><br>
-      <input type="checkbox" id="Course 10" name="courses" value="Course 10">
-      <label for="Course 10">Principles of Natural Justice (Hindi) (03.10.2026)</label><br>
-      <input type="checkbox" id="Course 11" name="courses" value="Course 11">
-      <label for="Course 11">मादक पदार्थों का नमूना संग्रह और साक्ष्य प्रबंधन (10.10.2026)</label><br>
-      <input type="checkbox" id="Course 12" name="courses" value="Course 12">
-      <label for="Course 12">सड़क सुरक्षा एवं यातायात अनुशासनःमूल सिद्धांत एवं व्यावहारिक समझ (17.10.2026)</label><br>
-    </div>
-    <button type="submit">Submit</button>
-  </form>
-
-  <div id="status"></div>
-
-  <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxazuXemqLG2dfCpLT5FSyn5ag9bEP-CihPL_N6kP5KlfArqmThvE6dlFLduHbv6gPu/exec';
-
-    document.getElementById('userForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const statusDiv = document.getElementById('status');
-      statusDiv.textContent = 'Submitting...';
-      statusDiv.style.color = 'black';
-
-      const checkedCourses = [];
-      document.querySelectorAll('input[name="courses"]:checked').forEach((checkbox) => {
-        checkedCourses.push(checkbox.value);
-      });
-
-      const formData = new URLSearchParams();
-      formData.append('name', document.getElementById('name').value);
-      formData.append('pno', document.getElementById('pno').value);
-      formData.append('courses', checkedCourses.join(', '));
-
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.result === 'exists') {
-          statusDiv.style.color = 'red';
-          statusDiv.textContent = 'Data Already Submitted';
-        } else if (data.result === 'success') {
-          statusDiv.style.color = 'green';
-          statusDiv.textContent = 'Data submitted successfully!';
-          document.getElementById('userForm').reset();
-        } else {
-          statusDiv.style.color = 'red';
-          statusDiv.textContent = 'Error: ' + data.message;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iGOT Karmyogi Course Status Form - PS BBD LKO</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
         }
-      })
-      .catch(error => {
-        statusDiv.style.color = 'red';
-        statusDiv.textContent = 'Error submitting form. Check console.';
-        console.error('Error:', error);
-      });
-    });
-  </script>
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .dark .glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Custom Checkbox Animation */
+        .custom-checkbox:checked + label {
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen py-8 px-4 transition-colors duration-300">
 
+    <!-- Glowing Background Decorative Effects -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-blue-500/20 dark:bg-blue-600/15 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/3 -right-40 w-96 h-96 bg-indigo-500/20 dark:bg-indigo-600/15 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-40 left-1/3 w-96 h-96 bg-emerald-500/20 dark:bg-emerald-600/15 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="max-w-2xl mx-auto">
+        
+        <!-- Header Card -->
+        <header class="glass rounded-3xl p-6 mb-6 text-center shadow-lg relative overflow-hidden">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg shadow-blue-500/30">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400">
+                iGOT Karmyogi Course Status
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                <i class="fa-solid fa-building-shield text-blue-500 mr-1"></i> Police Station BBD, Lucknow
+            </p>
+        </header>
+
+        <!-- Main Form Card -->
+        <main class="glass rounded-3xl p-6 sm:p-8 shadow-xl">
+            <form id="userForm" class="space-y-6">
+                
+                <!-- Personal Details Section -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="name" class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">
+                            <i class="fa-solid fa-user text-blue-500 mr-1"></i> Enter Your Name *
+                        </label>
+                        <input type="text" id="name" name="name" required placeholder="अपना पूरा नाम दर्ज करें"
+                            class="w-full px-4 py-3 rounded-2xl bg-slate-100/80 dark:bg-slate-900/80 border border-slate-300/80 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                    <div>
+                        <label for="pno" class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2">
+                            <i class="fa-solid fa-id-card text-blue-500 mr-1"></i> Enter Your PNO *
+                        </label>
+                        <input type="text" id="pno" name="pno" required placeholder="PNO संख्या दर्ज करें"
+                            class="w-full px-4 py-3 rounded-2xl bg-slate-100/80 dark:bg-slate-900/80 border border-slate-300/80 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+                </div>
+
+                <!-- Courses Selection Section -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-3">
+                        <i class="fa-solid fa-book-open text-blue-500 mr-1"></i> Courses (Check all You Can Complete):
+                    </label>
+
+                    <div class="space-y-2.5">
+                        
+                        <!-- Course 1 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 1" name="courses" value="Course 1" class="custom-checkbox hidden peer">
+                            <label for="Course 1" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">अग्नि सुरक्षा: मूल सिद्धान्त एवं आपात प्रतिक्रिया <span class="text-slate-400 text-[11px] font-normal">(01.08.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 2 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 2" name="courses" value="Course 2" class="custom-checkbox hidden peer">
+                            <label for="Course 2" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">आर्टिफिशियल इंटेलिजेंस की मूल बातें सीखना अनुप्रयोग और नैतिकता <span class="text-slate-400 text-[11px] font-normal">(08.08.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 3 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 3" name="courses" value="Course 3" class="custom-checkbox hidden peer">
+                            <label for="Course 3" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">कार्यस्थल पर महिलाओं के यौन उत्पीड़न की रोकथाम <span class="text-slate-400 text-[11px] font-normal">(15.08.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 4 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 4" name="courses" value="Course 4" class="custom-checkbox hidden peer">
+                            <label for="Course 4" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">वित्तीय धोखाधड़ी: डिजिटल अरेस्ट स्कैम से बचाव <span class="text-slate-400 text-[11px] font-normal">(22.08.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 5 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 5" name="courses" value="Course 5" class="custom-checkbox hidden peer">
+                            <label for="Course 5" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">मृत्यु पूर्व कथन: विधिक प्रक्रिया एवं साक्ष्यिक महत्व <span class="text-slate-400 text-[11px] font-normal">(29.08.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 6 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 6" name="courses" value="Course 6" class="custom-checkbox hidden peer">
+                            <label for="Course 6" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">जमानत के विधिक प्रावधान <span class="text-slate-400 text-[11px] font-normal">(05.09.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 7 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 7" name="courses" value="Course 7" class="custom-checkbox hidden peer">
+                            <label for="Course 7" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">रिमांड की अवधारणा और विधिक प्रावधान <span class="text-slate-400 text-[11px] font-normal">(12.09.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 8 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 8" name="courses" value="Course 8" class="custom-checkbox hidden peer">
+                            <label for="Course 8" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">आपराधिक मानव वध एवं हत्या और मॉब लिन्चिंग <span class="text-slate-400 text-[11px] font-normal">(19.09.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 9 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 9" name="courses" value="Course 9" class="custom-checkbox hidden peer">
+                            <label for="Course 9" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">दैनिक जीवन के लिए आवश्यक डिजिटल कौशल <span class="text-slate-400 text-[11px] font-normal">(26.09.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 10 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 10" name="courses" value="Course 10" class="custom-checkbox hidden peer">
+                            <label for="Course 10" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">Principles of Natural Justice (Hindi) <span class="text-slate-400 text-[11px] font-normal">(03.10.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 11 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 11" name="courses" value="Course 11" class="custom-checkbox hidden peer">
+                            <label for="Course 11" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">मादक पदार्थों का नमूना संग्रह और साक्ष्य प्रबंधन <span class="text-slate-400 text-[11px] font-normal">(10.10.2026)</span></span>
+                            </label>
+                        </div>
+
+                        <!-- Course 12 -->
+                        <div class="relative">
+                            <input type="checkbox" id="Course 12" name="courses" value="Course 12" class="custom-checkbox hidden peer">
+                            <label for="Course 12" class="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-all">
+                                <div class="w-5 h-5 rounded-lg border-2 border-slate-400 peer-checked:border-blue-600 peer-checked:bg-blue-600 flex items-center justify-center text-white text-xs shrink-0 transition-all">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-medium">सड़क सुरक्षा एवं यातायात अनुशासनः मूल सिद्धांत एवं व्यावहारिक समझ <span class="text-slate-400 text-[11px] font-normal">(17.10.2026)</span></span>
+                            </label>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submitBtn" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-lg shadow-blue-500/25 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Form
+                </button>
+            </form>
+
+            <!-- Status Alert Box -->
+            <div id="status" class="hidden mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 transition-all"></div>
+        </main>
+    </div>
+
+    <!-- JavaScript Handling -->
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyFYMuwaMDpTXeTtq9TYOQDGht0ah2O1jLLHK8tmdZmFe_MhWIFhVfitOvhk8GK42bpAA/exec';
+
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const statusDiv = document.getElementById('status');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            // UI Loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            
+            statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20';
+            statusDiv.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-base"></i> Submitting data, please wait...';
+            statusDiv.classList.remove('hidden');
+
+            const checkedCourses = [];
+            document.querySelectorAll('input[name="courses"]:checked').forEach((checkbox) => {
+                checkedCourses.push(checkbox.value);
+            });
+
+            const formData = new URLSearchParams();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('pno', document.getElementById('pno').value);
+            formData.append('courses', checkedCourses.join(', '));
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Form';
+
+                if (data.result === 'exists') {
+                    statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20';
+                    statusDiv.innerHTML = '<i class="fa-solid fa-circle-exclamation text-base"></i> Data Already Submitted';
+                } else if (data.result === 'success') {
+                    statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+                    statusDiv.innerHTML = '<i class="fa-solid fa-circle-check text-base"></i> Data submitted successfully!';
+                    document.getElementById('userForm').reset();
+                } else {
+                    statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
+                    statusDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-base"></i> Error: ' + data.message;
+                }
+            })
+            .catch(error => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Form';
+                
+                statusDiv.className = 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20';
+                statusDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-base"></i> Error submitting form. Please try again.';
+                console.error('Error:', error);
+            });
+        });
+    </script>
 </body>
 </html>
