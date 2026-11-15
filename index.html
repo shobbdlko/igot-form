@@ -22,26 +22,14 @@
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
 
-    /* Print styling to ensure clean A4 white background PDF */
     @media print {
-      body * {
-        visibility: hidden;
-      }
-      #printableArea, #printableArea * {
-        visibility: visible;
-      }
+      body * { visibility: hidden; }
+      #printableArea, #printableArea * { visibility: visible; }
       #printableArea {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        padding: 10px;
+        position: absolute; left: 0; top: 0; width: 100%;
+        background-color: #ffffff !important; color: #000000 !important; padding: 10px;
       }
-      .no-print {
-        display: none !important;
-      }
+      .no-print { display: none !important; }
     }
   </style>
 </head>
@@ -202,7 +190,7 @@
       </div>
     </div>
 
-    <!-- Data Table (Printable Area for A4 PDF Save) -->
+    <!-- Data Table -->
     <div id="printableArea" class="glass-card rounded-xl overflow-hidden">
       <div class="px-5 py-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
@@ -271,7 +259,8 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzQ8DhABhYVf9Rzy-JVMlXygvoerDXgjlrUomhzuOABiegVEVe9qQmljDUP3LuXw20t0Q/exec";
+    // यहाँ अपना डिप्लॉय किया गया Google Apps Script Web App URL डालें
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyizv1x7LRApbb53PP9EKKCU_0GMULyjt8piifOMOxD_MH6RQcHm48djyAJmS2paOwC/exec";
 
     let masterData = [];
     let filteredData = [];
@@ -321,7 +310,7 @@
           }
 
           badge.className = "text-xs px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
-          badge.textContent = ● Live Cloud Data (${masterData.length.toLocaleString()} Records) • Updated: ${formattedTime};
+          badge.textContent = `● Live Cloud Data (${masterData.length.toLocaleString()} Records) • Updated: ${formattedTime}`;
           populateDropdowns();
           applyFilters();
         } else {
@@ -329,7 +318,7 @@
         }
       } catch (err) {
         badge.className = "text-xs px-3 py-1.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30";
-        badge.textContent = ⚠️ ${err.message};
+        badge.textContent = `⚠️ ${err.message}`;
       }
     }
 
@@ -338,10 +327,10 @@
       const units = [...new Set(masterData.map(r => r["Posting Unit"]).filter(Boolean))].sort();
 
       document.getElementById("rankFilter").innerHTML =
-        <option value="ALL">All Ranks (सभी पद)</option> + ranks.map(r => <option value="${r}">${r}</option>).join("");
+        `<option value="ALL">All Ranks (सभी पद)</option>` + ranks.map(r => `<option value="${r}">${r}</option>`).join("");
 
       document.getElementById("unitFilter").innerHTML =
-        <option value="ALL">All Units</option> + units.map(u => <option value="${u}">${u}</option>).join("");
+        `<option value="ALL">All Units</option>` + units.map(u => `<option value="${u}">${u}</option>`).join("");
     }
 
     function applyFilters() {
@@ -397,16 +386,16 @@
       ).length;
 
       document.getElementById("kpiTotal").textContent = total.toLocaleString();
-      document.getElementById("kpiTotalPct").textContent = ${((total / masterTotal) * 100).toFixed(1)}% of total;
+      document.getElementById("kpiTotalPct").textContent = `${((total / masterTotal) * 100).toFixed(1)}% of total`;
       
       document.getElementById("kpiBothAA").textContent = bothAA.toLocaleString();
-      document.getElementById("kpiBothAAPct").textContent = total ? ${((bothAA / total) * 100).toFixed(1)}% : "0%";
+      document.getElementById("kpiBothAAPct").textContent = total ? `${((bothAA / total) * 100).toFixed(1)}%` : "0%";
       
       document.getElementById("kpiCctnsAA").textContent = cctnsAA.toLocaleString();
-      document.getElementById("kpiCctnsAAPct").textContent = total ? ${((cctnsAA / total) * 100).toFixed(1)}% : "0%";
+      document.getElementById("kpiCctnsAAPct").textContent = total ? `${((cctnsAA / total) * 100).toFixed(1)}%` : "0%";
       
       document.getElementById("kpiNlAA").textContent = nlAA.toLocaleString();
-      document.getElementById("kpiNlAAPct").textContent = total ? ${((nlAA / total) * 100).toFixed(1)}% : "0%";
+      document.getElementById("kpiNlAAPct").textContent = total ? `${((nlAA / total) * 100).toFixed(1)}%` : "0%";
     }
 
     function updateCharts() {
@@ -464,13 +453,13 @@
       const start = (currentPage - 1) * rowsPerPage;
       const pageRows = filteredData.slice(start, start + rowsPerPage);
 
-      document.getElementById("tableCountInfo").textContent = Showing ${filteredData.length ? start + 1 : 0}–${Math.min(start + rowsPerPage, filteredData.length)} of ${filteredData.length.toLocaleString()} records;
-      document.getElementById("pageIndicator").textContent = ${currentPage} / ${totalPages};
+      document.getElementById("tableCountInfo").textContent = `Showing ${filteredData.length ? start + 1 : 0}–${Math.min(start + rowsPerPage, filteredData.length)} of ${filteredData.length.toLocaleString()} records`;
+      document.getElementById("pageIndicator").textContent = `${currentPage} / ${totalPages}`;
       document.getElementById("prevPageBtn").disabled = currentPage <= 1;
       document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
 
       if (pageRows.length === 0) {
-        tbody.innerHTML = <tr><td colspan="9" class="py-8 text-center text-slate-400">कोई डेटा उपलब्ध नहीं है। Admin Panel से Excel फ़ाइल अपलोड करें या फ़िल्टर बदलें।</td></tr>;
+        tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400">कोई डेटा उपलब्ध नहीं है। Admin Panel से Excel फ़ाइल अपलोड करें या फ़िल्टर बदलें।</td></tr>`;
         return;
       }
 
@@ -479,13 +468,13 @@
       tbody.innerHTML = pageRows.map(r => {
         const cctnsCertVal = String(r["CCTNS Certified"] || "No").trim();
         const cctnsCertBadge = cctnsCertVal === "Yes"
-          ? <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">Yes</span>
-          : <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold">No</span>;
+          ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">Yes</span>`
+          : `<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold">No</span>`;
 
         const nlCertVal = String(r["New Laws Certified"] || "No").trim();
         const nlCertBadge = nlCertVal === "Yes" || nlCertVal.toLowerCase() === "yes"
-          ? <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">Yes</span>
-          : <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold">${nlCertVal}</span>;
+          ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">Yes</span>`
+          : `<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold">${nlCertVal}</span>`;
 
         function getGradeBadge(gradeVal) {
           const g = String(gradeVal || "-").trim().toUpperCase();
@@ -494,14 +483,13 @@
           else if (g === "A") styleClass = "text-blue-300 bg-blue-500/15 border-blue-500/30";
           else if (g === "B") styleClass = "text-amber-300 bg-amber-500/15 border-amber-500/30";
           else if (g === "C") styleClass = "text-rose-300 bg-rose-500/15 border-rose-500/30";
-          return <span class="px-2 py-0.5 rounded border font-bold ${styleClass}">${g}</span>;
+          return `<span class="px-2 py-0.5 rounded border font-bold ${styleClass}">${g}</span>`;
         }
 
         const cctnsGradeBadge = getGradeBadge(r["CCTNS Best Grade"]);
         const nlGradeBadge = getGradeBadge(r["New Laws Best Grade"]);
 
-        // Posting Unit Column with inline editing when Admin is logged in
-        let postingUnitCell = <span class="text-slate-300">${r["Posting Unit"] || "N/A"}</span>;
+        let postingUnitCell = `<span class="text-slate-300">${r["Posting Unit"] || "N/A"}</span>`;
         if (isEditingAllowed) {
           postingUnitCell = `
             <div class="flex items-center gap-1.5">
@@ -533,7 +521,7 @@
 
     // Function to save single updated Posting Unit directly to Google Sheet
     async function saveSingleUnit(pno) {
-      const inputEl = document.getElementById(unit-input-${pno});
+      const inputEl = document.getElementById(`unit-input-${pno}`);
       if (!inputEl || !adminCreds) return;
 
       const newUnitValue = inputEl.value.trim();
@@ -547,16 +535,15 @@
             action: "updateSingleUnit",
             username: adminCreds.username,
             password: adminCreds.password,
-            pno: pno,
+            pno: String(pno),
             newUnit: newUnitValue
           })
         });
 
         const result = await res.json();
         if (result.status === "success") {
-          alert(✅ PNO ${pno} की Posting Unit सफलतापूर्वक क्लाउड पर अपडेट हो गई!);
+          alert(`✅ PNO ${pno} की Posting Unit सफलतापूर्वक क्लाउड पर अपडेट हो गई!`);
           
-          // Update local masterData array
           const found = masterData.find(item => String(item["PNO"]) === String(pno));
           if (found) {
             found["Posting Unit"] = newUnitValue;
@@ -564,7 +551,7 @@
           populateDropdowns();
           applyFilters();
         } else {
-          alert(❌ त्रुटि: ${result.message});
+          alert(`❌ त्रुटि: ${result.message}`);
           inputEl.disabled = false;
         }
       } catch (err) {
@@ -574,7 +561,6 @@
       }
     }
 
-    // Function to trigger native print dialog for clean A4 PDF saving with white background
     function downloadFilteredPDF() {
       if (!filteredData.length) {
         alert("PDF में डाउनलोड करने के लिए कोई डेटा उपलब्ध नहीं है।");
@@ -646,9 +632,9 @@
           document.getElementById("adminPanelBar").classList.remove("hidden");
           document.getElementById("adminToggleBtn").textContent = "⚙️ Admin Controls";
           document.getElementById("adminToggleBtn").classList.replace("bg-cyan-600", "bg-amber-600");
-          renderTable(); // Re-render table to show inline input fields
+          renderTable();
         } else {
-          errEl.textContent = ❌ ${data.message || "गलत Username या Password!"};
+          errEl.textContent = `❌ ${data.message || "गलत Username या Password!"}`;
           errEl.classList.remove("hidden");
         }
       } catch (err) {
@@ -665,7 +651,7 @@
       document.getElementById("adminPanelBar").classList.add("hidden");
       document.getElementById("adminToggleBtn").textContent = "🔐 Admin Panel";
       document.getElementById("adminToggleBtn").classList.replace("bg-amber-600", "bg-cyan-600");
-      renderTable(); // Re-render table to remove input fields
+      renderTable();
     }
 
     function handleCloudFileUpload(event) {
@@ -714,10 +700,10 @@
 
           const result = await res.json();
           if (result.status === "success") {
-            alert(✅ ${result.message});
+            alert(`✅ ${result.message}`);
             await fetchLiveCloudData();
           } else {
-            alert(❌ त्रुटि: ${result.message});
+            alert(`❌ त्रुटि: ${result.message}`);
           }
         } catch (err) {
           console.error(err);
