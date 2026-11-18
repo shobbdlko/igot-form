@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Course Completion Analytics Dashboard | Lucknow Commissionerate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0b1120; color: #e2e8f0; }
+    .brand-font { font-family: 'Orbitron', sans-serif; }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(10px);
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #printableArea, #printableArea * { visibility: visible; }
+      #printableArea {
+        position: absolute; left: 0; top: 0; width: 100%;
+        background-color: #ffffff !important; color: #000000 !important; padding: 10px;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Navbar -->
+  <header class="glass-card sticky top-0 z-40 border-b border-cyan-500/30 px-6 py-4 no-print">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-400 font-bold text-xl">
+          📊
+        </div>
+        <div>
+          <h1 class="brand-font text-lg md:text-xl font-bold text-cyan-400 tracking-wide">
+            COURSE TRAINING ANALYTICS PORTAL
+          </h1>
+          <p class="text-xs text-slate-400">Live Google Sheet Sync • Real-Time Progress Tracker</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <span id="syncStatusBadge" class="text-xs px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          ⏳ Connecting to Cloud...
+        </span>
+        <button onclick="fetchLiveCloudData()" class="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-lg shadow-cyan-500/20 transition">
+          🔄 Refresh Data
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-6 space-y-6">
+
+    <!-- Filters -->
+    <div class="glass-card rounded-xl p-5 no-print">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-cyan-300 uppercase tracking-wider">🔍 Data Filters & Search</h3>
+        <button onclick="resetFilters()" class="text-xs text-cyan-400 hover:underline">Reset All Filters</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">SEARCH PNO / NAME</label>
+          <input type="text" id="searchInput" oninput="applyFilters()" placeholder="ENTER PNO OR NAME..."
+            class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">FILTER BY COURSE</label>
+          <select id="courseFilter" onchange="applyFilters()"
+            class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400">
+            <option value="ALL">ALL COURSES</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">FROM DATE (TIMESTAMP)</label>
+          <input type="date" id="fromDateFilter" onchange="applyFilters()"
+            class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">TO DATE (TIMESTAMP)</label>
+          <input type="date" id="toDateFilter" onchange="applyFilters()"
+            class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400" />
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
+      <div class="glass-card rounded-xl p-5 border-l-4 border-l-emerald-400">
+        <p class="text-xs text-slate-400 uppercase font-semibold">Total Personnel</p>
+        <div class="flex items-baseline justify-between mt-2">
+          <h4 id="kpiUniquePno" class="text-3xl font-bold text-emerald-400">0</h4>
+          <span class="text-xs text-emerald-300 font-medium">Total Staff</span>
+        </div>
+      </div>
+      <div class="glass-card rounded-xl p-5 border-l-4 border-l-cyan-400">
+        <p class="text-xs text-slate-400 uppercase font-semibold">Form Submissions</p>
+        <div class="flex items-baseline justify-between mt-2">
+          <h4 id="kpiTotalEntries" class="text-3xl font-bold text-white">0</h4>
+          <span id="kpiTotalPct" class="text-xs text-cyan-400 font-medium">100%</span>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-xl p-5 border-l-4 border-l-amber-400">
+        <p class="text-xs text-slate-400 uppercase font-semibold">Weekend Courses</p>
+        <div class="flex items-baseline justify-between mt-2">
+          <h4 id="kpiUniqueCourses" class="text-3xl font-bold text-amber-400">0</h4>
+          <span class="text-xs text-amber-300 font-medium">Active Modules</span>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-xl p-5 border-l-4 border-l-purple-400">
+        <p class="text-xs text-slate-400 uppercase font-semibold">Today's Entries</p>
+        <div class="flex items-baseline justify-between mt-2">
+          <h4 id="kpiTodayCount" class="text-3xl font-bold text-purple-400">0</h4>
+          <span class="text-xs text-purple-300 font-medium">Live Today</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 no-print">
+      <div class="glass-card rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-slate-200 mb-4">🎯 Course-wise Completion Share</h3>
+        <div class="h-72 flex items-center justify-center"><canvas id="courseDoughnutChart"></canvas></div>
+      </div>
+      <div class="glass-card rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-slate-200 mb-4">📈 Top Courses Count Comparison</h3>
+        <div class="h-72 flex items-center justify-center"><canvas id="courseBarChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div id="printableArea" class="glass-card rounded-xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <h3 class="text-sm font-semibold text-cyan-300">📋 Personnel Course Records</h3>
+          <button onclick="downloadFilteredPDF()" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow transition flex items-center gap-1.5 no-print">
+            📄 Download PDF (A4)
+          </button>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-slate-400">
+          <span id="tableCountInfo">Showing 0 records</span>
+          <div class="flex items-center gap-1 no-print">
+            <button onclick="changePage(-1)" id="prevPageBtn" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40">Prev</button>
+            <span id="pageIndicator" class="px-2 text-slate-200 font-medium">1 / 1</span>
+            <button onclick="changePage(1)" id="nextPageBtn" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-900/90 text-slate-300 border-b border-slate-700 uppercase">
+              <th class="py-3 px-4">SR.NO.</th>
+              <th class="py-3 px-4 cursor-pointer hover:text-cyan-400" onclick="toggleSort('Timestamp')">Timestamp ↕️</th>
+              <th class="py-3 px-4 cursor-pointer hover:text-cyan-400" onclick="toggleSort('Pno')">PNO ↕️</th>
+              <th class="py-3 px-4 cursor-pointer hover:text-cyan-400" onclick="toggleSort('Name')">Name ↕️</th>
+              <th class="py-3 px-4 cursor-pointer hover:text-cyan-400" onclick="toggleSort('Courses')">Courses ↕️</th>
+            </tr>
+          </thead>
+          <tbody id="dataTableBody" class="divide-y divide-slate-800/80 text-slate-200"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ⚠️ यहाँ अपना Google Apps Script Web App URL पेस्ट करें
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby_CNBB33s91LHqPKI8yg4yrbjbVcvpDFal63fGyOdSEASA2fQPC-AMlR6kF4um5Qpw5g/exec";
+
+    let masterData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    const rowsPerPage = 15;
+    let sortAsc = false;
+
+    let doughnutChartInst = null;
+    let barChartInst = null;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      fetchLiveCloudData();
+    });
+
+    function formatTimestamp(ts) {
+      if (!ts) return "-";
+      const d = new Date(ts);
+      if (isNaN(d.getTime())) return String(ts);
+      return d.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit", hour12: true
+      });
+    }
+
+    async function fetchLiveCloudData() {
+      const badge = document.getElementById("syncStatusBadge");
+      badge.className = "text-xs px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30";
+      badge.textContent = "⏳ Syncing from Cloud...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, { redirect: "follow" });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          masterData = data.records || [];
+          const formattedTime = formatTimestamp(data.lastUpdated || new Date());
+
+          badge.className = "text-xs px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
+          badge.textContent = `● Live Cloud Data (${masterData.length.toLocaleString()} Records) • Updated: ${formattedTime}`;
+          
+          populateCourseDropdown();
+          applyFilters();
+        } else {
+          throw new Error(data.message || "Failed to load data");
+        }
+      } catch (err) {
+        badge.className = "text-xs px-3 py-1.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30";
+        badge.textContent = `⚠️ Error: SCRIPT_URL जाँचें`;
+      }
+    }
+
+    // यदि एक सेल में कॉमा (,) से अलग कई कोर्स हों तो उन्हें भी अलग-अलग गिनने के लिए
+    function extractCourses(courseStr) {
+      if (!courseStr) return [];
+      return String(courseStr).split(",").map(c => c.trim()).filter(Boolean);
+    }
+
+    function populateCourseDropdown() {
+      const courseSet = new Set();
+      masterData.forEach(r => {
+        extractCourses(r["Courses"]).forEach(c => courseSet.add(c));
+      });
+      const courses = [...courseSet].sort();
+
+      document.getElementById("courseFilter").innerHTML =
+        `<option value="ALL">ALL COURSES (${courses.length})</option>` +
+        courses.map(c => `<option value="${c}">${c}</option>`).join("");
+    }
+
+    function applyFilters() {
+      const query = document.getElementById("searchInput").value.trim().toLowerCase();
+      const selectedCourse = document.getElementById("courseFilter").value;
+      const fromDate = document.getElementById("fromDateFilter").value;
+      const toDate = document.getElementById("toDateFilter").value;
+
+      filteredData = masterData.filter(row => {
+        const pno = String(row["Pno"] || "").toLowerCase();
+        const name = String(row["Name"] || "").toLowerCase();
+        const matchSearch = !query || pno.includes(query) || name.includes(query);
+
+        const rowCourses = extractCourses(row["Courses"]);
+        const matchCourse = selectedCourse === "ALL" || rowCourses.includes(selectedCourse);
+
+        let matchDate = true;
+        if (fromDate || toDate) {
+          const rowDateObj = new Date(row["Timestamp"]);
+          if (!isNaN(rowDateObj.getTime())) {
+            const rowDateStr = rowDateObj.toISOString().split("T")[0];
+            if (fromDate && rowDateStr < fromDate) matchDate = false;
+            if (toDate && rowDateStr > toDate) matchDate = false;
+          }
+        }
+
+        return matchSearch && matchCourse && matchDate;
+      });
+
+      currentPage = 1;
+      updateKPIs();
+      updateCharts();
+      renderTable();
+    }
+
+    function resetFilters() {
+      document.getElementById("searchInput").value = "";
+      document.getElementById("courseFilter").value = "ALL";
+      document.getElementById("fromDateFilter").value = "";
+      document.getElementById("toDateFilter").value = "";
+      applyFilters();
+    }
+
+    function toggleSort(column) {
+      sortAsc = !sortAsc;
+      filteredData.sort((a, b) => {
+        let valA = a[column] || "";
+        let valB = b[column] || "";
+        if (column === "Timestamp") {
+          valA = new Date(valA).getTime() || 0;
+          valB = new Date(valB).getTime() || 0;
+          return sortAsc ? valA - valB : valB - valA;
+        }
+        valA = String(valA).toLowerCase();
+        valB = String(valB).toLowerCase();
+        if (valA < valB) return sortAsc ? -1 : 1;
+        if (valA > valB) return sortAsc ? 1 : -1;
+        return 0;
+      });
+      currentPage = 1;
+      renderTable();
+    }
+
+   function updateKPIs() {
+      // 1. कुल Personnel (जिस पर फ़िल्टर का कोई असर नहीं होता - सभी दर्ज Names)
+      const totalNamesCount = masterData.filter(r => String(r["Name"] || "").trim() !== "").length;
+
+      // 2. Form Submissions: masterData (या filteredData?) - यदि इस पर भी फ़िल्टर का असर नहीं चाहिए या फ़िल्टर के साथ बदलना है, 
+      // यूजर के निर्देशानुसार "जितने pno दर्ज हुए उनसे निकाला जाये": यहाँ हम masterData या filteredData के यूनिक PNOs ले सकते हैं।
+      // यदि कुल masterData के यूनिक PNOs लेने हैं (ताकि फ़िल्टर का असर न पड़े या फ़िल्टर के साथ बदले):
+      const masterUniquePnos = new Set(masterData.map(r => String(r["Pno"] || "").trim()).filter(Boolean));
+      const filteredUniquePnos = new Set(filteredData.map(r => String(r["Pno"] || "").trim()).filter(Boolean));
+
+      // यहाँ Form Submissions में फ़िल्टर किए गए यूनिक PNOs की संख्या या कुल यूनिक PNOs दिखाए जा सकते हैं। 
+      // चूँकि यूजर ने कहा "जितने pno दर्ज हुए उनसे", हम filteredUniquePnos (या masterUniquePnos) का उपयोग कर सकते हैं:
+      const formSubmissionsCount = filteredUniquePnos.size; 
+      const totalMasterPnosCount = masterUniquePnos.size;
+
+      // प्रतिशत: (Form Submissions के यूनिक PNOs / Total Personnel) * 100
+      const percentage = totalNamesCount > 0 ? ((formSubmissionsCount / totalNamesCount) * 100).toFixed(1) : "0.0";
+
+      // अन्य गणनाएँ
+      const uniqueCourses = new Set();
+      filteredData.forEach(r => extractCourses(r["Courses"]).forEach(c => uniqueCourses.add(c)));
+
+      const todayStr = new Date().toISOString().split("T")[0];
+      const todayCount = filteredData.filter(r => {
+        const d = new Date(r["Timestamp"]);
+        return !isNaN(d.getTime()) && d.toISOString().split("T")[0] === todayStr;
+      }).length;
+
+      // DOM में वैल्यू अपडेट करना
+      document.getElementById("kpiTotalEntries").textContent = formSubmissionsCount.toLocaleString();
+      document.getElementById("kpiTotalPct").textContent = `${percentage}% of total`;
+      
+      // Total Personnel कार्ड में सभी Name की कुल संख्या (फ़िल्टर प्रभावहीन)
+      document.getElementById("kpiUniquePno").textContent = totalNamesCount.toLocaleString();
+      
+      document.getElementById("kpiUniqueCourses").textContent = uniqueCourses.size.toLocaleString();
+      document.getElementById("kpiTodayCount").textContent = todayCount.toLocaleString();
+    }
+
+    function updateCharts() {
+      const courseCounts = {};
+      filteredData.forEach(r => {
+        const courses = extractCourses(r["Courses"]);
+        if (courses.length === 0) {
+          courseCounts["Unspecified"] = (courseCounts["Unspecified"] || 0) + 1;
+        } else {
+          courses.forEach(c => {
+            courseCounts[c] = (courseCounts[c] || 0) + 1;
+          });
+        }
+      });
+
+      const sortedEntries = Object.entries(courseCounts).sort((a, b) => b[1] - a[1]);
+      const labels = sortedEntries.map(e => e[0]);
+      const counts = sortedEntries.map(e => e[1]);
+
+      const palette = [
+        "#06b6d4", "#10b981", "#3b82f6", "#f59e0b", "#8b5cf6",
+        "#ec4899", "#ef4444", "#14b8a6", "#f97316", "#6366f1"
+      ];
+
+      if (doughnutChartInst) doughnutChartInst.destroy();
+      doughnutChartInst = new Chart(document.getElementById("courseDoughnutChart"), {
+        type: "doughnut",
+        data: {
+          labels: labels,
+          datasets: [{
+            data: counts,
+            backgroundColor: labels.map((_, i) => palette[i % palette.length]),
+            borderColor: "#0f172a",
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: "bottom", labels: { color: "#cbd5e1", font: { size: 11 } } } }
+        }
+      });
+
+      if (barChartInst) barChartInst.destroy();
+      barChartInst = new Chart(document.getElementById("courseBarChart"), {
+        type: "bar",
+        data: {
+          labels: labels.slice(0, 10),
+          datasets: [{
+            label: "Completions",
+            data: counts.slice(0, 10),
+            backgroundColor: "rgba(56, 189, 248, 0.7)",
+            borderColor: "#38bdf8",
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: "#94a3b8", precision: 0 }, grid: { color: "rgba(148, 163, 184, 0.1)" } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("dataTableBody");
+      const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const start = (currentPage - 1) * rowsPerPage;
+      const pageRows = filteredData.slice(start, start + rowsPerPage);
+
+      document.getElementById("tableCountInfo").textContent =
+        `Showing ${filteredData.length ? start + 1 : 0}–${Math.min(start + rowsPerPage, filteredData.length)} of ${filteredData.length.toLocaleString()} records`;
+      document.getElementById("pageIndicator").textContent = `${currentPage} / ${totalPages}`;
+      document.getElementById("prevPageBtn").disabled = currentPage <= 1;
+      document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
+
+      if (pageRows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">कोई रिकॉर्ड नहीं मिला। फ़िल्टर बदलें या डेटा रिफ्रेश करें।</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = pageRows.map((r, index) => {
+        const srNo = start + index + 1;
+        const coursesList = extractCourses(r["Courses"]);
+        const courseBadges = coursesList.length
+          ? coursesList.map(c => `<span class="inline-block px-2 py-0.5 mr-1 mb-1 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-medium">${c}</span>`).join("")
+          : `<span class="text-slate-500">-</span>`;
+
+        return `
+          <tr class="hover:bg-slate-800/50 transition">
+            <td class="py-2.5 px-4 font-mono text-cyan-400 font-bold">${srNo}</td>
+            <td class="py-2.5 px-4 text-slate-400 whitespace-nowrap">${formatTimestamp(r["Timestamp"])}</td>
+            <td class="py-2.5 px-4 font-mono text-emerald-300 font-semibold">${r["Pno"] || "-"}</td>
+            <td class="py-2.5 px-4 font-medium text-white">${r["Name"] || "-"}</td>
+            <td class="py-2.5 px-4">${courseBadges}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function changePage(delta) {
+      currentPage += delta;
+      renderTable();
+    }
+
+    function downloadFilteredPDF() {
+      if (!filteredData.length) {
+        alert("PDF में डाउनलोड करने के लिए कोई डेटा उपलब्ध नहीं है।");
+        return;
+      }
+
+      const tbody = document.getElementById("dataTableBody");
+      tbody.innerHTML = filteredData.map((r, index) => `
+        <tr style="border-bottom: 1px solid #cbd5e1; color: #000000 !important; background-color: #ffffff !important;">
+          <td style="padding: 6px 8px; font-weight: bold;">${index + 1}</td>
+          <td style="padding: 6px 8px;">${formatTimestamp(r["Timestamp"])}</td>
+          <td style="padding: 6px 8px; font-family: monospace;">${r["Pno"] || "-"}</td>
+          <td style="padding: 6px 8px; font-weight: 500;">${r["Name"] || "-"}</td>
+          <td style="padding: 6px 8px;">${r["Courses"] || "-"}</td>
+        </tr>
+      `).join("");
+
+      window.print();
+      setTimeout(() => renderTable(), 1000);
+    }
+  </script>
+</body>
+</html>
