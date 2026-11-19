@@ -30,7 +30,7 @@
       display: inline-block;
       white-space: nowrap;
       padding-left: 2rem;
-      animation: marqueeRtl 16s linear infinite;
+      animation: marqueeRtl 35s linear infinite;
     }
     .marquee-wrapper:hover .marquee-track {
       animation-play-state: paused;
@@ -92,7 +92,7 @@
     <!-- Right-to-Left Moving Latest Weekly Course Ticker -->
     <div id="latestCourseTickerBar" class="glass-card rounded-xl px-4 py-2.5 border border-cyan-400/30 flex items-center gap-3 overflow-hidden no-print">
       <span class="shrink-0 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
-        📢 Latest Course
+        📢 Latest Announcement
       </span>
       <div class="marquee-wrapper flex-1 overflow-hidden relative">
         <div id="latestCourseMarqueeText" class="marquee-track text-xs md:text-sm font-semibold text-emerald-300">
@@ -192,7 +192,7 @@
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
             <h3 class="text-sm font-semibold text-cyan-300">Training Schedule Calendar</h3>
-            <span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30">From 01 Aug 2026</span>
+            <span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30">From 01/08/2026</span>
           </div>
           <button id="addWeeklyCourseBtn" onclick="openAddWeeklyCourseModal()" class="hidden px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition flex items-center gap-1">
             ➕ Add Weekly Course
@@ -374,17 +374,36 @@
       return { name: "", link: "" };
     }
 
+    function formatDisplayDate(dateInput) {
+      if (!dateInput) return "";
+      const raw = String(dateInput).trim();
+
+      const dmyMatch = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (dmyMatch) {
+        return `${dmyMatch[1].padStart(2, "0")}/${dmyMatch[2].padStart(2, "0")}/${dmyMatch[3]}`;
+      }
+
+      const isoKey = getISTDateKey(raw);
+      const isoMatch = isoKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoMatch) {
+        return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+      }
+
+      return raw;
+    }
+
     function buildSaturdayInfoHtml(dateStr, entry) {
+      const displayDate = formatDisplayDate(dateStr);
       const { name, link } = parseWeeklyCourseEntry(entry);
       if (!name) {
-        return `<span class="text-slate-400">${escapeHtmlText(dateStr)} (शनिवार): कोई कोर्स असाइन नहीं।</span>`;
+        return `<span class="text-slate-400">${escapeHtmlText(displayDate)} (शनिवार): कोई कोर्स असाइन नहीं।</span>`;
       }
       const cleanUrl = normalizeUrl(link);
       const courseDisplay = cleanUrl
         ? `<a href="${escapeHtmlAttr(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="underline decoration-emerald-400 hover:text-cyan-300 transition">${escapeHtmlText(name)}</a>`
         : `<b>${escapeHtmlText(name)}</b>`;
 
-      return `<span class="text-emerald-300 font-semibold">${escapeHtmlText(dateStr)} (शनिवार): ${courseDisplay}</span>`;
+      return `<span class="text-emerald-300 font-semibold">${escapeHtmlText(displayDate)} (शनिवार): ${courseDisplay}</span>`;
     }
 
     function getRowExpandKey(row, fallbackIdx = 0) {
@@ -465,7 +484,11 @@
           const parsed = parseWeeklyCourseEntry(entry);
           return String(dateStr || "").trim() !== "" && parsed.name !== "";
         })
-        .sort((a, b) => String(b[0]).localeCompare(String(a[0])));
+        .sort((a, b) => {
+          const keyA = getISTDateKey(a[0]) || String(a[0]);
+          const keyB = getISTDateKey(b[0]) || String(b[0]);
+          return keyB.localeCompare(keyA);
+        });
 
       if (entries.length === 0) {
         marqueeEl.textContent = "अभी कोई Weekly Course असाइन नहीं किया गया है।";
@@ -474,7 +497,7 @@
 
       const [latestDate, latestEntry] = entries[0];
       const { name: latestCourse } = parseWeeklyCourseEntry(latestEntry);
-      marqueeEl.textContent = `Latest Weekly Course (${latestDate} - शनिवार): ${latestCourse}`;
+      marqueeEl.textContent = `Latest Weekly Course (${formatDisplayDate(latestDate)} - शनिवार): ${latestCourse} | थाना स्थानीय पर नियुक्त सभी कर्मी कृपया Weekly Course को पूर्ण करने के उपरान्त अपने Record को Update अवश्य कर दें।`;
     }
 
     function handleAdminButtonClick() {
@@ -774,6 +797,25 @@
       )];
     }
 
+    function getCourseAssignedDateMap() {
+      const dateByCourse = new Map();
+
+      Object.entries(weeklyCourses || {}).forEach(([dateStr, entry]) => {
+        const cleanDate = getISTDateKey(dateStr) || String(dateStr || "").trim();
+        const { name } = parseWeeklyCourseEntry(entry);
+        const normalizedCourse = normalizeCourseLabel(name);
+
+        if (!cleanDate || !normalizedCourse) return;
+
+        const existingDate = dateByCourse.get(normalizedCourse);
+        if (!existingDate || cleanDate > existingDate) {
+          dateByCourse.set(normalizedCourse, cleanDate);
+        }
+      });
+
+      return dateByCourse;
+    }
+
     function populateCourseDropdownFromRecords() {
       const completedCourseSet = new Set();
 
@@ -781,16 +823,35 @@
         extractCompletedCourses(r).forEach(c => completedCourseSet.add(c));
       });
 
-      const courses = [...completedCourseSet].sort((a, b) =>
-        a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
-      );
+      const assignedDateMap = getCourseAssignedDateMap();
+
+      const courses = [...completedCourseSet].sort((a, b) => {
+        const dateA = assignedDateMap.get(a) || "";
+        const dateB = assignedDateMap.get(b) || "";
+
+        if (dateA && dateB) {
+          if (dateA !== dateB) {
+            return dateA.localeCompare(dateB);
+          }
+          return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+        }
+
+        if (dateA && !dateB) return -1;
+        if (!dateA && dateB) return 1;
+
+        return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+      });
 
       const selectEl = document.getElementById("courseFilter");
       const previousValue = selectEl.value;
 
       selectEl.innerHTML =
         `<option value="ALL">ALL WEEKLY COURSES (${courses.length})</option>` +
-        courses.map(c => `<option value="${c.replace(/"/g, "&quot;")}">${c}</option>`).join("");
+        courses.map(c => {
+          const assignedDate = assignedDateMap.get(c);
+          const dateLabel = assignedDate ? ` (${formatDisplayDate(assignedDate)})` : "";
+          return `<option value="${escapeHtmlAttr(c)}">${escapeHtmlText(c)}${escapeHtmlText(dateLabel)}</option>`;
+        }).join("");
 
       if (previousValue && (previousValue === "ALL" || courses.includes(previousValue))) {
         selectEl.value = previousValue;
@@ -1007,6 +1068,7 @@
         const mm = String(month + 1).padStart(2, '0');
         const dd = String(day).padStart(2, '0');
         const dateStr = `${year}-${mm}-${dd}`;
+        const displayDateStr = formatDisplayDate(dateStr);
 
         const dateObj = new Date(year, month, day);
         const isSaturday = dateObj.getDay() === 6;
@@ -1030,6 +1092,7 @@
 
         const div = document.createElement("div");
         div.className = cellClass;
+        div.title = displayDateStr;
         div.innerHTML = content;
 
         if (isSaturday && dateStr >= "2026-08-01") {
@@ -1082,7 +1145,7 @@
       const d = new Date(y, m - 1, dNum);
 
       if (d.getDay() !== 6) {
-        alert("चेतावनी: चुनी गई तिथि शनिवार (Saturday) नहीं है। कृपया शनिवार की तारीख चुनें।");
+        alert(`चेतावनी: चुनी गई तिथि (${formatDisplayDate(dateVal)}) शनिवार (Saturday) नहीं है। कृपया शनिवार की तारीख चुनें।`);
         return;
       }
 
@@ -1101,6 +1164,7 @@
 
       currentCalendarDate = new Date(d.getFullYear(), d.getMonth(), 1);
       updateLatestCourseTicker();
+      populateCourseDropdownFromRecords();
       renderCalendar();
       updateKPIs();
 
@@ -1126,7 +1190,7 @@
           body: JSON.stringify(payload)
         });
 
-        alert(`सफलतापूर्वक कोर्स '${courseVal}' Weeklycourses शीट पर सेव हो गया है!`);
+        alert(`सफलतापूर्वक कोर्स '${courseVal}' (${formatDisplayDate(dateVal)}) Weeklycourses शीट पर सेव हो गया है!`);
       } catch (err) {
         console.error("Cloud save error:", err);
         alert("लोकल रूप से सेव हो गया, लेकिन क्लाउड सिंक में त्रुटि हुई।");
