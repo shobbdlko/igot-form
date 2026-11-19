@@ -299,12 +299,16 @@
       </div>
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block text-slate-400 mb-1">शनिवार की तिथि (Saturday Date)</label>
+          <label class="block text-slate-400 mb-1">Assign Date (शनिवार की तिथि)</label>
           <input type="date" id="modalCourseDate" min="2026-08-01" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none" />
         </div>
         <div>
           <label class="block text-slate-400 mb-1">कोर्स का नाम (Course Name)</label>
           <input type="text" id="modalCourseName" placeholder="उदा. Course 17 या New Criminal Laws Training" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">कोर्स Link (Course URL)</label>
+          <input type="url" id="modalCourseUrl" placeholder="https://igotkarmyogi.gov.in/..." class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none" />
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-2">
@@ -315,7 +319,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwb4CIN0qBG9jrfSqguqd31lwQ7qfJZ6SC3VNDw2IuEzPOEs2Lagjfd47o1PhY4akOQZg/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybxegYYjyRP84ALLFSSeJv18rsdBHyKL28wxrGVJXKbIp9TnV9VOTVuw_eD69QI4ob6A/exec";
     const FIXED_TOTAL_PERSONNEL = 92;
     const PERSONNEL_STORAGE_KEY = "ps_bbd_fixed_total_personnel_v1";
 
@@ -324,6 +328,7 @@
     let masterData = [];
     let filteredData = [];
     let weeklyCourses = {};
+    let selectedSaturdayDate = "";
     let expandedRowIds = new Set();
     let currentPage = 1;
     const rowsPerPage = 15;
@@ -332,6 +337,55 @@
     let liveSyncTimer = null;
     let totalPersonnelFixed = loadSavedTotalPersonnel();
     let currentCalendarDate = new Date(2026, 7, 1);
+
+    function escapeHtmlAttr(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function escapeHtmlText(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function normalizeUrl(rawUrl) {
+      const trimmed = String(rawUrl || "").trim();
+      if (!trimmed) return "";
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      return `https://${trimmed}`;
+    }
+
+    function parseWeeklyCourseEntry(entry) {
+      if (!entry) return { name: "", link: "" };
+      if (typeof entry === "string") {
+        return { name: entry.trim(), link: "" };
+      }
+      if (typeof entry === "object") {
+        const name = String(entry.course || entry.courseName || entry.name || entry.title || "").trim();
+        const link = String(entry.Link || entry.link || entry.url || entry.courseUrl || "").trim();
+        return { name, link };
+      }
+      return { name: "", link: "" };
+    }
+
+    function buildSaturdayInfoHtml(dateStr, entry) {
+      const { name, link } = parseWeeklyCourseEntry(entry);
+      if (!name) {
+        return `<span class="text-slate-400">${escapeHtmlText(dateStr)} (शनिवार): कोई कोर्स असाइन नहीं।</span>`;
+      }
+      const cleanUrl = normalizeUrl(link);
+      const courseDisplay = cleanUrl
+        ? `<a href="${escapeHtmlAttr(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="underline decoration-emerald-400 hover:text-cyan-300 transition">${escapeHtmlText(name)}</a>`
+        : `<b>${escapeHtmlText(name)}</b>`;
+
+      return `<span class="text-emerald-300 font-semibold">${escapeHtmlText(dateStr)} (शनिवार): ${courseDisplay}</span>`;
+    }
 
     function getRowExpandKey(row, fallbackIdx = 0) {
       const pno = String(row["Pno"] || "").trim();
@@ -407,7 +461,10 @@
       if (!marqueeEl) return;
 
       const entries = Object.entries(weeklyCourses || {})
-        .filter(([dateStr, courseName]) => String(dateStr || "").trim() !== "" && String(courseName || "").trim() !== "")
+        .filter(([dateStr, entry]) => {
+          const parsed = parseWeeklyCourseEntry(entry);
+          return String(dateStr || "").trim() !== "" && parsed.name !== "";
+        })
         .sort((a, b) => String(b[0]).localeCompare(String(a[0])));
 
       if (entries.length === 0) {
@@ -415,7 +472,8 @@
         return;
       }
 
-      const [latestDate, latestCourse] = entries[0];
+      const [latestDate, latestEntry] = entries[0];
+      const { name: latestCourse } = parseWeeklyCourseEntry(latestEntry);
       marqueeEl.textContent = `Latest Weekly Course (${latestDate} - शनिवार): ${latestCourse}`;
     }
 
@@ -679,6 +737,12 @@
           populateCourseDropdownFromRecords();
           applyFilters();
           renderCalendar();
+          if (selectedSaturdayDate) {
+            const infoBox = document.getElementById("selectedSaturdayInfo");
+            if (infoBox) {
+              infoBox.innerHTML = buildSaturdayInfoHtml(selectedSaturdayDate, weeklyCourses[selectedSaturdayDate]);
+            }
+          }
         } else {
           throw new Error(data.message || "Failed to load data");
         }
@@ -946,7 +1010,8 @@
 
         const dateObj = new Date(year, month, day);
         const isSaturday = dateObj.getDay() === 6;
-        const courseName = weeklyCourses[dateStr];
+        const parsedCourse = parseWeeklyCourseEntry(weeklyCourses[dateStr]);
+        const hasCourse = Boolean(parsedCourse.name);
 
         let cellClass = "p-1 rounded flex flex-col items-center justify-center transition text-center relative ";
         let content = `<span class="font-medium">${day}</span>`;
@@ -954,7 +1019,7 @@
         if (dateStr < "2026-08-01") {
           cellClass += " bg-slate-900/30 text-slate-600 opacity-40";
         } else if (isSaturday) {
-          if (courseName) {
+          if (hasCourse) {
             cellClass += " bg-emerald-500/25 border border-emerald-400 text-emerald-200 cursor-pointer hover:bg-emerald-500/40 font-bold";
           } else {
             cellClass += " bg-slate-900/60 text-cyan-300 cursor-pointer hover:bg-slate-800 border border-slate-800";
@@ -969,12 +1034,9 @@
 
         if (isSaturday && dateStr >= "2026-08-01") {
           div.onclick = () => {
+            selectedSaturdayDate = dateStr;
             const infoBox = document.getElementById("selectedSaturdayInfo");
-            if (courseName) {
-              infoBox.innerHTML = `<span class="text-emerald-300 font-semibold">${dateStr} (शनिवार): <b>${courseName}</b></span>`;
-            } else {
-              infoBox.innerHTML = `<span class="text-slate-400">${dateStr} (शनिवार): कोई कोर्स असाइन नहीं।</span>`;
-            }
+            infoBox.innerHTML = buildSaturdayInfoHtml(dateStr, weeklyCourses[dateStr]);
           };
         }
 
@@ -1009,9 +1071,10 @@
 
       const dateVal = document.getElementById("modalCourseDate").value;
       const courseVal = document.getElementById("modalCourseName").value.trim();
+      const linkVal = document.getElementById("modalCourseUrl").value.trim();
 
       if (!dateVal || !courseVal) {
-        alert("कृपया तिथि और कोर्स का नाम दोनों भरें।");
+        alert("कृपया Assign Date और कोर्स का नाम दोनों भरें।");
         return;
       }
 
@@ -1023,7 +1086,17 @@
         return;
       }
 
-      weeklyCourses[dateVal] = courseVal;
+      const formattedLink = normalizeUrl(linkVal);
+      weeklyCourses[dateVal] = {
+        course: courseVal,
+        Link: formattedLink,
+        link: formattedLink
+      };
+      selectedSaturdayDate = dateVal;
+
+      document.getElementById("modalCourseDate").value = "";
+      document.getElementById("modalCourseName").value = "";
+      document.getElementById("modalCourseUrl").value = "";
       closeAddWeeklyCourseModal();
 
       currentCalendarDate = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -1031,11 +1104,19 @@
       renderCalendar();
       updateKPIs();
 
+      const infoBox = document.getElementById("selectedSaturdayInfo");
+      if (infoBox) {
+        infoBox.innerHTML = buildSaturdayInfoHtml(dateVal, weeklyCourses[dateVal]);
+      }
+
       try {
         const payload = {
           action: "saveWeeklyCourse",
           date: dateVal,
-          course: courseVal
+          course: courseVal,
+          Link: formattedLink,
+          link: formattedLink,
+          url: formattedLink
         };
 
         await fetch(SCRIPT_URL, {
@@ -1045,7 +1126,7 @@
           body: JSON.stringify(payload)
         });
 
-        alert(`सफलतापूर्वक कोर्स '${courseVal}' गूगल शीट पर सेव हो गया है!`);
+        alert(`सफलतापूर्वक कोर्स '${courseVal}' Weeklycourses शीट पर सेव हो गया है!`);
       } catch (err) {
         console.error("Cloud save error:", err);
         alert("लोकल रूप से सेव हो गया, लेकिन क्लाउड सिंक में त्रुटि हुई।");
