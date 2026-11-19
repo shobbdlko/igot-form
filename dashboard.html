@@ -86,7 +86,7 @@
   <!-- Main Content -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-6 space-y-6">
 
-    <!-- Right-to-Left Moving Latest Weekly Course Ticker (Just above Data Filters & Search) -->
+    <!-- Right-to-Left Moving Latest Weekly Course Ticker -->
     <div id="latestCourseTickerBar" class="glass-card rounded-xl px-4 py-2.5 border border-cyan-400/30 flex items-center gap-3 overflow-hidden no-print">
       <span class="shrink-0 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
         📢 Latest Course
@@ -134,11 +134,22 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
       <div class="glass-card rounded-xl p-5 border-l-4 border-l-emerald-400">
         <p class="text-xs text-slate-400 uppercase font-semibold">Total Personnel</p>
-        <div class="flex items-baseline justify-between mt-2">
+        <div class="flex items-center justify-between gap-2 mt-2">
           <h4 id="kpiUniquePno" class="text-3xl font-bold text-emerald-400">0</h4>
-          <span class="text-xs text-emerald-300 font-medium">Total Staff</span>
+          <div class="flex items-center gap-1.5">
+            <button id="decPersonnelBtn" type="button" onclick="adjustTotalPersonnel(-1)" title="Decrease Total Personnel"
+              class="hidden w-7 h-7 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-400/50 text-rose-300 font-bold text-sm flex items-center justify-center transition">
+              −
+            </button>
+            <button id="incPersonnelBtn" type="button" onclick="adjustTotalPersonnel(1)" title="Increase Total Personnel"
+              class="hidden w-7 h-7 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/50 text-emerald-300 font-bold text-sm flex items-center justify-center transition">
+              +
+            </button>
+            <span id="personnelLabelBadge" class="text-xs text-emerald-300 font-medium">Fixed Staff</span>
+          </div>
         </div>
       </div>
+
       <div class="glass-card rounded-xl p-5 border-l-4 border-l-cyan-400">
         <p class="text-xs text-slate-400 uppercase font-semibold">Form Submissions</p>
         <div class="flex items-baseline justify-between mt-2">
@@ -166,7 +177,7 @@
 
     <!-- Normal Calendar Grid & Bar Chart Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 no-print">
-      
+
       <!-- Normal Clean Calendar Component -->
       <div class="glass-card rounded-xl p-5 flex flex-col justify-between">
         <div class="flex items-center justify-between mb-4">
@@ -289,8 +300,10 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVssH7GDA7jV4xFN8YA-wCP6B_sZxNNXdYhsUzCN4PkXAvDVrY_CNqcPC0pJCikeuv-A/exec";
-    const ADMIN_PASS = "admin@123"; // अपना Admin Password यहाँ बदलें
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKp5VsppWBbRdSiXb7hnWpbBMV4PdEMo_TW2zFRXev_gw3Jlbzm1bkfrkZYr98eLulZw/exec";
+    const ADMIN_PASS = "admin@123";
+    const FIXED_TOTAL_PERSONNEL = 92;
+    const PERSONNEL_STORAGE_KEY = "ps_bbd_fixed_total_personnel_v1";
 
     let isAdminUnlocked = false;
     let masterData = [];
@@ -300,14 +313,59 @@
     const rowsPerPage = 15;
     let sortAsc = false;
     let barChartInst = null;
-
-    // कैलेंडर करंट व्यू डेट (01 अगस्त 2026 से शुरू)
+    let liveSyncTimer = null;
+    let totalPersonnelFixed = loadSavedTotalPersonnel();
     let currentCalendarDate = new Date(2026, 7, 1);
+
+    function loadSavedTotalPersonnel() {
+      const saved = localStorage.getItem(PERSONNEL_STORAGE_KEY);
+      const parsed = parseInt(saved, 10);
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : FIXED_TOTAL_PERSONNEL;
+    }
+
+    function saveTotalPersonnelToLocal(val) {
+      localStorage.setItem(PERSONNEL_STORAGE_KEY, String(val));
+    }
+
+    async function syncTotalPersonnelToCloud(newValue) {
+      try {
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "saveTotalPersonnel",
+            totalPersonnel: newValue
+          })
+        });
+      } catch (err) {
+        console.error("Failed to sync totalPersonnel to cloud:", err);
+      }
+    }
+
+    function adjustTotalPersonnel(delta) {
+      if (!isAdminUnlocked) return;
+      const nextVal = Math.max(0, (Number(totalPersonnelFixed) || 0) + delta);
+      totalPersonnelFixed = nextVal;
+      saveTotalPersonnelToLocal(nextVal);
+      updateKPIs();
+      syncTotalPersonnelToCloud(nextVal);
+    }
+
+    function startLiveAutoRefresh(intervalMs = 30000) {
+      if (liveSyncTimer) clearInterval(liveSyncTimer);
+      liveSyncTimer = setInterval(() => {
+        if (!document.hidden) {
+          fetchLiveCloudData(true);
+        }
+      }, intervalMs);
+    }
 
     window.addEventListener("DOMContentLoaded", () => {
       renderCalendar();
       updateLatestCourseTicker();
       fetchLiveCloudData();
+      startLiveAutoRefresh(30000);
     });
 
     function updateLatestCourseTicker() {
@@ -358,16 +416,98 @@
     function updateAdminUI() {
       const addBtn = document.getElementById("addWeeklyCourseBtn");
       const adminBtn = document.getElementById("adminToggleBtn");
+      const incBtn = document.getElementById("incPersonnelBtn");
+      const decBtn = document.getElementById("decPersonnelBtn");
 
       if (isAdminUnlocked) {
         addBtn.classList.remove("hidden");
+        if (incBtn) incBtn.classList.remove("hidden");
+        if (decBtn) decBtn.classList.remove("hidden");
         adminBtn.className = "px-3.5 py-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-400 text-emerald-300 text-xs font-semibold transition flex items-center gap-1.5";
         adminBtn.textContent = "🔓 Admin (Lock)";
       } else {
         addBtn.classList.add("hidden");
+        if (incBtn) incBtn.classList.add("hidden");
+        if (decBtn) decBtn.classList.add("hidden");
         adminBtn.className = "px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-amber-300 text-xs font-semibold transition flex items-center gap-1.5";
         adminBtn.textContent = "🔐 Admin";
       }
+    }
+
+    function getRecordTimestamp(row) {
+      if (!row || typeof row !== "object") return "";
+      const keys = ["Timestamp", "timestamp", "Updated At", "UpdatedAt", "Date", "date"];
+      for (const k of keys) {
+        if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== "") {
+          return row[k];
+        }
+      }
+      const foundKey = Object.keys(row).find(k =>
+        ["timestamp", "updated at", "updatedat", "date"].includes(String(k).trim().toLowerCase())
+      );
+      return foundKey ? row[foundKey] : "";
+    }
+
+    function formatToISTYMD(dateObj) {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(dateObj);
+
+      const y = parts.find(p => p.type === "year")?.value;
+      const m = parts.find(p => p.type === "month")?.value;
+      const d = parts.find(p => p.type === "day")?.value;
+      return (y && m && d) ? `${y}-${m}-${d}` : "";
+    }
+
+    function getISTDateKey(dateInput) {
+      if (!dateInput) return "";
+
+      if (dateInput instanceof Date) {
+        if (isNaN(dateInput.getTime())) return "";
+        return formatToISTYMD(dateInput);
+      }
+
+      const raw = String(dateInput).trim();
+      if (!raw) return "";
+
+      const isoOnlyMatch = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (isoOnlyMatch) {
+        return `${isoOnlyMatch[1]}-${isoOnlyMatch[2].padStart(2, "0")}-${isoOnlyMatch[3].padStart(2, "0")}`;
+      }
+
+      const dmyMatch = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[,\s]+(.*))?$/);
+      if (dmyMatch) {
+        const day = dmyMatch[1].padStart(2, "0");
+        const month = dmyMatch[2].padStart(2, "0");
+        const year = dmyMatch[3];
+        let timePart = (dmyMatch[4] || "00:00:00").trim();
+
+        const ampmMatch = timePart.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)$/i);
+        if (ampmMatch) {
+          let hrs = parseInt(ampmMatch[1], 10);
+          const mins = ampmMatch[2];
+          const secs = ampmMatch[3] || "00";
+          const period = ampmMatch[4].toLowerCase();
+          if (period === "pm" && hrs < 12) hrs += 12;
+          if (period === "am" && hrs === 12) hrs = 0;
+          timePart = `${String(hrs).padStart(2, "0")}:${mins}:${secs}`;
+        }
+
+        const istDate = new Date(`${year}-${month}-${day}T${timePart}+05:30`);
+        if (!isNaN(istDate.getTime())) {
+          return formatToISTYMD(istDate);
+        }
+      }
+
+      const parsed = new Date(raw);
+      if (!isNaN(parsed.getTime())) {
+        return formatToISTYMD(parsed);
+      }
+
+      return "";
     }
 
     function formatTimestamp(ts) {
@@ -388,23 +528,35 @@
       return `${y}-${m}-${d}`;
     }
 
-    async function fetchLiveCloudData() {
+    async function fetchLiveCloudData(silent = false) {
       const badge = document.getElementById("syncStatusBadge");
-      badge.className = "text-xs px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30";
-      badge.textContent = "⏳ Syncing from Cloud...";
+      if (!silent) {
+        badge.className = "text-xs px-3 py-1.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30";
+        badge.textContent = "⏳ Syncing from Cloud...";
+      }
 
       try {
-        const res = await fetch(SCRIPT_URL, { redirect: "follow" });
+        const sep = SCRIPT_URL.includes("?") ? "&" : "?";
+        const res = await fetch(`${SCRIPT_URL}${sep}_t=${Date.now()}`, { redirect: "follow" });
         const data = await res.json();
 
         if (data.status === "success") {
           masterData = data.records || [];
           weeklyCourses = data.weeklyCourses || {};
+
+          if (data.totalPersonnel !== undefined && data.totalPersonnel !== null && data.totalPersonnel !== "") {
+            const cloudTotal = parseInt(data.totalPersonnel, 10);
+            if (Number.isFinite(cloudTotal) && cloudTotal >= 0) {
+              totalPersonnelFixed = cloudTotal;
+              saveTotalPersonnelToLocal(cloudTotal);
+            }
+          }
+
           const formattedTime = formatTimestamp(data.lastUpdated || new Date());
 
           badge.className = "text-xs px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
           badge.textContent = `● Live Cloud Data (${masterData.length.toLocaleString()} Records) • Updated: ${formattedTime}`;
-          
+
           updateLatestCourseTicker();
           populateCourseDropdown();
           applyFilters();
@@ -419,22 +571,46 @@
       }
     }
 
+    function normalizeCourseLabel(val) {
+      const clean = String(val || "").trim();
+      if (!clean) return "";
+      const match = clean.match(/^(?:course\s*)?0*(\d+)$/i);
+      if (match) {
+        return "Course " + String(match[1]).padStart(2, "0");
+      }
+      return clean;
+    }
+
     function extractCourses(courseStr) {
       if (!courseStr) return [];
-      return String(courseStr).split(",").map(c => c.trim()).filter(Boolean);
+      return String(courseStr)
+        .split(",")
+        .map(c => normalizeCourseLabel(c))
+        .filter(Boolean);
     }
 
     function populateCourseDropdown() {
       const courseSet = new Set();
-      masterData.forEach(r => {
-        extractCourses(r["Courses"]).forEach(c => courseSet.add(c));
-      });
-      Object.values(weeklyCourses).forEach(c => courseSet.add(c));
-      const courses = [...courseSet].sort();
 
-      document.getElementById("courseFilter").innerHTML =
+      masterData.forEach(r => {
+        const rawCourses = r["Courses"] !== undefined ? r["Courses"] : r["Course"];
+        extractCourses(rawCourses).forEach(c => courseSet.add(c));
+      });
+
+      const courses = [...courseSet].sort((a, b) =>
+        a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
+      );
+
+      const selectEl = document.getElementById("courseFilter");
+      const previousValue = selectEl.value;
+
+      selectEl.innerHTML =
         `<option value="ALL">ALL COURSES (${courses.length})</option>` +
-        courses.map(c => `<option value="${c}">${c}</option>`).join("");
+        courses.map(c => `<option value="${c.replace(/"/g, "&quot;")}">${c}</option>`).join("");
+
+      if (previousValue && (previousValue === "ALL" || courses.includes(previousValue))) {
+        selectEl.value = previousValue;
+      }
     }
 
     function applyFilters() {
@@ -448,14 +624,15 @@
         const name = String(row["Name"] || "").toLowerCase();
         const matchSearch = !query || pno.includes(query) || name.includes(query);
 
-        const rowCourses = extractCourses(row["Courses"]);
+        const rawCourses = row["Courses"] !== undefined ? row["Courses"] : row["Course"];
+        const rowCourses = extractCourses(rawCourses);
         const matchCourse = selectedCourse === "ALL" || rowCourses.includes(selectedCourse);
 
         let matchDate = true;
         if (fromDate || toDate) {
-          const rowDateObj = new Date(row["Timestamp"]);
-          if (!isNaN(rowDateObj.getTime())) {
-            const rowDateStr = getLocalISODate(rowDateObj);
+          const tsVal = getRecordTimestamp(row);
+          const rowDateStr = getISTDateKey(tsVal);
+          if (rowDateStr) {
             if (fromDate && rowDateStr < fromDate) matchDate = false;
             if (toDate && rowDateStr > toDate) matchDate = false;
           } else {
@@ -494,27 +671,29 @@
     }
 
     function updateKPIs() {
-      const totalNamesCount = masterData.filter(r => String(r["Name"] || "").trim() !== "").length;
+      const totalPersonnelCount = Math.max(0, Number(totalPersonnelFixed) || 0);
       const filteredUniquePnos = new Set(
         filteredData
-          .filter(r => extractCourses(r["Courses"]).length > 0)
+          .filter(r => extractCourses(r["Courses"] !== undefined ? r["Courses"] : r["Course"]).length > 0)
           .map(r => String(r["Pno"] || "").trim())
           .filter(Boolean)
       );
-      const formSubmissionsCount = filteredUniquePnos.size; 
-      const percentage = totalNamesCount > 0 ? ((formSubmissionsCount / totalNamesCount) * 100).toFixed(1) : "0.0";
+      const formSubmissionsCount = filteredUniquePnos.size;
+      const percentage = totalPersonnelCount > 0
+        ? ((formSubmissionsCount / totalPersonnelCount) * 100).toFixed(1)
+        : "0.0";
 
       const scheduledWeekendCoursesCount = Object.keys(weeklyCourses).length;
 
-      const todayStr = getLocalISODate(new Date());
-      const todayCount = filteredData.filter(r => {
-        const d = new Date(r["Timestamp"]);
-        return !isNaN(d.getTime()) && getLocalISODate(d) === todayStr;
+      const todayISTKey = getISTDateKey(new Date());
+      const todayCount = masterData.filter(r => {
+        const ts = getRecordTimestamp(r);
+        return getISTDateKey(ts) === todayISTKey;
       }).length;
 
       document.getElementById("kpiTotalEntries").textContent = formSubmissionsCount.toLocaleString();
       document.getElementById("kpiTotalPct").textContent = `${percentage}% of total`;
-      document.getElementById("kpiUniquePno").textContent = totalNamesCount.toLocaleString();
+      document.getElementById("kpiUniquePno").textContent = totalPersonnelCount.toLocaleString();
       document.getElementById("kpiUniqueCourses").textContent = scheduledWeekendCoursesCount.toLocaleString();
       document.getElementById("kpiTodayCount").textContent = todayCount.toLocaleString();
     }
@@ -524,7 +703,7 @@
       filteredData.forEach(r => {
         const pno = String(r["Pno"] || "").trim();
         const name = String(r["Name"] || "").trim() || "Unknown";
-        const courseCount = extractCourses(r["Courses"]).length;
+        const courseCount = extractCourses(r["Courses"] !== undefined ? r["Courses"] : r["Course"]).length;
 
         if (pno && courseCount > 0) {
           if (!personMap[pno]) {
@@ -569,7 +748,7 @@
     function renderCalendar() {
       const grid = document.getElementById("calendarGrid");
       const title = document.getElementById("calendarMonthTitle");
-      
+
       const year = currentCalendarDate.getFullYear();
       const month = currentCalendarDate.getMonth();
 
@@ -631,10 +810,10 @@
     function changeMonth(delta) {
       const targetDate = new Date(currentCalendarDate);
       targetDate.setMonth(targetDate.getMonth() + delta);
-      
+
       const minDate = new Date(2026, 7, 1);
       if (targetDate < minDate) {
-        return; 
+        return;
       }
 
       currentCalendarDate = targetDate;
@@ -671,7 +850,7 @@
 
       weeklyCourses[dateVal] = courseVal;
       closeAddWeeklyCourseModal();
-      
+
       currentCalendarDate = new Date(d.getFullYear(), d.getMonth(), 1);
       updateLatestCourseTicker();
       renderCalendar();
@@ -720,7 +899,8 @@
 
       tbody.innerHTML = pageRows.map((r, index) => {
         const srNo = start + index + 1;
-        const coursesList = extractCourses(r["Courses"]);
+        const rawCourses = r["Courses"] !== undefined ? r["Courses"] : r["Course"];
+        const coursesList = extractCourses(rawCourses);
         const courseBadges = coursesList.length
           ? coursesList.map(c => `<span class="inline-block px-2 py-0.5 mr-1 mb-1 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-medium">${c}</span>`).join("")
           : `<span class="text-slate-500">-</span>`;
@@ -753,7 +933,7 @@
           <td style="padding: 6px 8px; font-weight: bold;">${index + 1}</td>
           <td style="padding: 6px 8px; font-family: monospace;">${r["Pno"] || "-"}</td>
           <td style="padding: 6px 8px; font-weight: 500;">${r["Name"] || "-"}</td>
-          <td style="padding: 6px 8px;">${r["Courses"] || "-"}</td>
+          <td style="padding: 6px 8px;">${r["Courses"] || r["Course"] || "-"}</td>
         </tr>
       `).join("");
 
