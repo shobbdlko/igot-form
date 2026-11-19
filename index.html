@@ -63,9 +63,9 @@
         </div>
         <div>
           <h1 class="brand-font text-lg md:text-xl font-bold text-cyan-400 tracking-wide">
-            COURSE TRAINING ANALYTICS PORTAL
+            iGOT COURSE ANALYTICS PORTAL
           </h1>
-          <p class="text-xs text-slate-400">Live Google Sheet Sync • Real-Time Progress Tracker</p>
+          <p class="text-xs text-slate-400">Police Station BBD Lucknow</p>
         </div>
       </div>
 
@@ -76,6 +76,9 @@
         <button onclick="fetchLiveCloudData()" class="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-lg shadow-cyan-500/20 transition">
           🔄 Refresh Data
         </button>
+        <a href="Update.html" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-500/20 transition inline-flex items-center gap-1.5">
+          ✏️ Update Entry
+        </a>
         <button id="adminToggleBtn" onclick="handleAdminButtonClick()" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-amber-300 text-xs font-semibold transition flex items-center gap-1.5">
           🔐 Admin
         </button>
@@ -111,7 +114,7 @@
             class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400" />
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">FILTER BY COMPLETED COURSE (RECORDS)</label>
+          <label class="block text-xs text-slate-400 mb-1">FILTER BY COURSE NAME</label>
           <select id="courseFilter" onchange="applyFilters()"
             class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-cyan-400">
             <option value="ALL">ALL COURSES</option>
@@ -175,8 +178,14 @@
       </div>
     </div>
 
-    <!-- Normal Calendar Grid & Bar Chart Section -->
+    <!-- Bar Chart (Left) & Normal Calendar Grid (Right) Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 no-print">
+
+      <!-- Top 10 Persons Bar Chart -->
+      <div class="glass-card rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-slate-200 mb-4">🏆 Top 10 Course Completed Persons</h3>
+        <div class="h-72 flex items-center justify-center"><canvas id="courseBarChart"></canvas></div>
+      </div>
 
       <!-- Normal Clean Calendar Component -->
       <div class="glass-card rounded-xl p-5 flex flex-col justify-between">
@@ -211,11 +220,6 @@
         </div>
       </div>
 
-      <!-- Top 10 Persons Bar Chart -->
-      <div class="glass-card rounded-xl p-5">
-        <h3 class="text-sm font-semibold text-slate-200 mb-4">🏆 Top 10 Course Completed Persons</h3>
-        <div class="h-72 flex items-center justify-center"><canvas id="courseBarChart"></canvas></div>
-      </div>
     </div>
 
     <!-- Data Table (Visible only when Admin is unlocked) -->
@@ -265,7 +269,7 @@
           <label class="block text-slate-400 mb-1">Admin Username</label>
           <input type="text" id="adminUsernameInput" autocomplete="username"
             onkeydown="if(event.key==='Enter') document.getElementById('adminPasswordInput').focus()"
-            placeholder="Username डालें"
+            placeholder="Enter Username"
             class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white focus:border-amber-400 focus:outline-none" />
         </div>
         <div>
@@ -274,7 +278,7 @@
             onkeydown="if(event.key==='Enter') verifyAdminCredentials()"
             placeholder="••••••••"
             class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white focus:border-amber-400 focus:outline-none" />
-          <p id="adminErrorMsg" class="text-rose-400 text-[11px] mt-1 hidden">गलत Username या Password! कृपया पुनः प्रयास करें।</p>
+          <p id="adminErrorMsg" class="text-rose-400 text-[11px] mt-1 hidden">Wrong Username Or Password! Please Try Again।</p>
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-2">
@@ -512,6 +516,40 @@
       return foundKey ? row[foundKey] : "";
     }
 
+    function parseTimestampMs(ts) {
+      if (!ts) return Number.MAX_SAFE_INTEGER;
+      if (ts instanceof Date) {
+        return isNaN(ts.getTime()) ? Number.MAX_SAFE_INTEGER : ts.getTime();
+      }
+      const raw = String(ts).trim();
+      if (!raw) return Number.MAX_SAFE_INTEGER;
+
+      const dmyMatch = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[,\s]+(.*))?$/);
+      if (dmyMatch) {
+        const day = dmyMatch[1].padStart(2, "0");
+        const month = dmyMatch[2].padStart(2, "0");
+        const year = dmyMatch[3];
+        let timePart = (dmyMatch[4] || "00:00:00").trim();
+
+        const ampmMatch = timePart.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)$/i);
+        if (ampmMatch) {
+          let hrs = parseInt(ampmMatch[1], 10);
+          const mins = ampmMatch[2];
+          const secs = ampmMatch[3] || "00";
+          const period = ampmMatch[4].toLowerCase();
+          if (period === "pm" && hrs < 12) hrs += 12;
+          if (period === "am" && hrs === 12) hrs = 0;
+          timePart = `${String(hrs).padStart(2, "0")}:${mins}:${secs}`;
+        }
+
+        const parsedDmy = new Date(`${year}-${month}-${day}T${timePart}+05:30`);
+        if (!isNaN(parsedDmy.getTime())) return parsedDmy.getTime();
+      }
+
+      const parsed = new Date(raw);
+      return isNaN(parsed.getTime()) ? Number.MAX_SAFE_INTEGER : parsed.getTime();
+    }
+
     function formatToISTYMD(dateObj) {
       const parts = new Intl.DateTimeFormat("en-CA", {
         timeZone: "Asia/Kolkata",
@@ -612,7 +650,7 @@
           const formattedTime = formatTimestamp(data.lastUpdated || new Date());
 
           badge.className = "text-xs px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
-          badge.textContent = `● Live Cloud Data (${masterData.length.toLocaleString()} Records) • Updated: ${formattedTime}`;
+          badge.textContent = `● Last Updated: ${formattedTime}`;
 
           updateLatestCourseTicker();
           populateCourseDropdownFromRecords();
@@ -649,9 +687,6 @@
       )];
     }
 
-    /**
-     * Filter dropdown केवल Records शीट में यूजर द्वारा पूर्ण किए गए कोर्सेज से पॉप्युलेट होता है।
-     */
     function populateCourseDropdownFromRecords() {
       const completedCourseSet = new Set();
 
@@ -667,7 +702,7 @@
       const previousValue = selectEl.value;
 
       selectEl.innerHTML =
-        `<option value="ALL">ALL COMPLETED COURSES (${courses.length})</option>` +
+        `<option value="ALL">ALL WEEKLY COURSES (${courses.length})</option>` +
         courses.map(c => `<option value="${c.replace(/"/g, "&quot;")}">${c}</option>`).join("");
 
       if (previousValue && (previousValue === "ALL" || courses.includes(previousValue))) {
@@ -785,21 +820,52 @@
 
     function updateCharts() {
       const personMap = {};
-      filteredData.forEach(r => {
+
+      filteredData.forEach((r, rowIdx) => {
         const pno = String(r["Pno"] || "").trim();
         const name = String(r["Name"] || "").trim() || "Unknown";
-        const courseCount = (r._visibleCourses || []).length;
+        const visibleCourses = r._visibleCourses || [];
 
-        if (pno && courseCount > 0) {
+        if (pno && visibleCourses.length > 0) {
+          const tsMs = parseTimestampMs(getRecordTimestamp(r));
+
           if (!personMap[pno]) {
-            personMap[pno] = { name: name, totalCourses: 0 };
+            personMap[pno] = {
+              pno: pno,
+              name: name,
+              courseSet: new Set(visibleCourses),
+              earliestTs: tsMs,
+              firstSeenIndex: rowIdx
+            };
+          } else {
+            visibleCourses.forEach(c => personMap[pno].courseSet.add(c));
+            if (name !== "Unknown") personMap[pno].name = name;
+            if (tsMs < personMap[pno].earliestTs) {
+              personMap[pno].earliestTs = tsMs;
+            }
+            if (rowIdx < personMap[pno].firstSeenIndex) {
+              personMap[pno].firstSeenIndex = rowIdx;
+            }
           }
-          personMap[pno].totalCourses += courseCount;
         }
       });
 
       const topPersons = Object.values(personMap)
-        .sort((a, b) => b.totalCourses - a.totalCourses)
+        .map(p => ({
+          name: p.name,
+          totalCourses: p.courseSet.size,
+          earliestTs: p.earliestTs,
+          firstSeenIndex: p.firstSeenIndex
+        }))
+        .sort((a, b) => {
+          if (b.totalCourses !== a.totalCourses) {
+            return b.totalCourses - a.totalCourses;
+          }
+          if (a.earliestTs !== b.earliestTs) {
+            return a.earliestTs - b.earliestTs;
+          }
+          return a.firstSeenIndex - b.firstSeenIndex;
+        })
         .slice(0, 10);
 
       const personNames = topPersons.map(p => p.name);
