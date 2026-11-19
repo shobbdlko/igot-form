@@ -21,12 +21,32 @@
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
 
+    /* Right-to-Left Moving Ticker Animation */
+    @keyframes marqueeRtl {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    .marquee-track {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 2rem;
+      animation: marqueeRtl 16s linear infinite;
+    }
+    .marquee-wrapper:hover .marquee-track {
+      animation-play-state: paused;
+    }
+
     @media print {
       body * { visibility: hidden; }
       #printableArea, #printableArea * { visibility: visible; }
       #printableArea {
         position: absolute; left: 0; top: 0; width: 100%;
         background-color: #ffffff !important; color: #000000 !important; padding: 10px;
+      }
+      #printableArea th {
+        background-color: #f1f5f9 !important;
+        color: #000000 !important;
+        border: 1px solid #cbd5e1 !important;
       }
       .no-print { display: none !important; }
     }
@@ -56,12 +76,27 @@
         <button onclick="fetchLiveCloudData()" class="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-lg shadow-cyan-500/20 transition">
           🔄 Refresh Data
         </button>
+        <button id="adminToggleBtn" onclick="handleAdminButtonClick()" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-amber-300 text-xs font-semibold transition flex items-center gap-1.5">
+          🔐 Admin
+        </button>
       </div>
     </div>
   </header>
 
   <!-- Main Content -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-6 space-y-6">
+
+    <!-- Right-to-Left Moving Latest Weekly Course Ticker (Just above Data Filters & Search) -->
+    <div id="latestCourseTickerBar" class="glass-card rounded-xl px-4 py-2.5 border border-cyan-400/30 flex items-center gap-3 overflow-hidden no-print">
+      <span class="shrink-0 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
+        📢 Latest Course
+      </span>
+      <div class="marquee-wrapper flex-1 overflow-hidden relative">
+        <div id="latestCourseMarqueeText" class="marquee-track text-xs md:text-sm font-semibold text-emerald-300">
+          अभी कोई Weekly Course असाइन नहीं किया गया है।
+        </div>
+      </div>
+    </div>
 
     <!-- Filters -->
     <div class="glass-card rounded-xl p-5 no-print">
@@ -108,7 +143,7 @@
         <p class="text-xs text-slate-400 uppercase font-semibold">Form Submissions</p>
         <div class="flex items-baseline justify-between mt-2">
           <h4 id="kpiTotalEntries" class="text-3xl font-bold text-white">0</h4>
-          <span id="kpiTotalPct" class="text-xs text-cyan-400 font-medium">100%</span>
+          <span id="kpiTotalPct" class="text-xs text-cyan-400 font-medium">0.0%</span>
         </div>
       </div>
 
@@ -116,7 +151,7 @@
         <p class="text-xs text-slate-400 uppercase font-semibold">Weekend Courses</p>
         <div class="flex items-baseline justify-between mt-2">
           <h4 id="kpiUniqueCourses" class="text-3xl font-bold text-amber-400">0</h4>
-          <span class="text-xs text-amber-300 font-medium">Active Modules</span>
+          <span class="text-xs text-amber-300 font-medium">Scheduled Saturdays</span>
         </div>
       </div>
 
@@ -129,14 +164,45 @@
       </div>
     </div>
 
-    <!-- Charts Section -->
+    <!-- Normal Calendar Grid & Bar Chart Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 no-print">
-      <div class="glass-card rounded-xl p-5">
-        <h3 class="text-sm font-semibold text-slate-200 mb-4">🎯 Course-wise Completion Share</h3>
-        <div class="h-72 flex items-center justify-center"><canvas id="courseDoughnutChart"></canvas></div>
+      
+      <!-- Normal Clean Calendar Component -->
+      <div class="glass-card rounded-xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <h3 class="text-sm font-semibold text-cyan-300">Training Schedule Calendar</h3>
+            <span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30">From 01 Aug 2026</span>
+          </div>
+          <button id="addWeeklyCourseBtn" onclick="openAddWeeklyCourseModal()" class="hidden px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition flex items-center gap-1">
+            ➕ Add Weekly Course
+          </button>
+        </div>
+
+        <!-- Calendar Navigation Header -->
+        <div class="flex items-center justify-between mb-3 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+          <button onclick="changeMonth(-1)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-xs text-cyan-300">◀️ Prev</button>
+          <h4 id="calendarMonthTitle" class="text-sm font-bold text-white tracking-wide">August 2026</h4>
+          <button onclick="changeMonth(1)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-xs text-cyan-300">Next ▶️</button>
+        </div>
+
+        <!-- Days of Week Header -->
+        <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-slate-400 mb-1">
+          <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div class="text-cyan-400">Sa</div>
+        </div>
+
+        <!-- Calendar Grid Body -->
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-xs min-h-[220px]"></div>
+
+        <!-- Selected Saturday Info Footer -->
+        <div id="selectedSaturdayInfo" class="mt-3 p-2.5 rounded-lg bg-slate-900/90 border border-cyan-500/30 text-xs text-slate-300 flex items-center justify-between">
+          <span class="text-cyan-400 font-medium">शनिवार पर क्लिक करके कोर्स का विवरण देखें।</span>
+        </div>
       </div>
+
+      <!-- Top 10 Persons Bar Chart -->
       <div class="glass-card rounded-xl p-5">
-        <h3 class="text-sm font-semibold text-slate-200 mb-4">📈 Top Courses Count Comparison</h3>
+        <h3 class="text-sm font-semibold text-slate-200 mb-4">🏆 Top 10 Course Completed Persons</h3>
         <div class="h-72 flex items-center justify-center"><canvas id="courseBarChart"></canvas></div>
       </div>
     </div>
@@ -150,9 +216,9 @@
             📄 Download PDF (A4)
           </button>
         </div>
-        <div class="flex items-center gap-3 text-xs text-slate-400">
+        <div class="flex items-center gap-3 text-xs text-slate-400 no-print">
           <span id="tableCountInfo">Showing 0 records</span>
-          <div class="flex items-center gap-1 no-print">
+          <div class="flex items-center gap-1">
             <button onclick="changePage(-1)" id="prevPageBtn" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40">Prev</button>
             <span id="pageIndicator" class="px-2 text-slate-200 font-medium">1 / 1</span>
             <button onclick="changePage(1)" id="nextPageBtn" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40">Next</button>
@@ -176,22 +242,133 @@
     </div>
   </main>
 
-  <script>
-    // ⚠️ यहाँ अपना Google Apps Script Web App URL पेस्ट करें
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby_CNBB33s91LHqPKI8yg4yrbjbVcvpDFal63fGyOdSEASA2fQPC-AMlR6kF4um5Qpw5g/exec";
+  <!-- Admin Password Modal -->
+  <div id="adminPasswordModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-card rounded-xl p-6 max-w-sm w-full border border-amber-500/40 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-amber-300 brand-font">🔐 Admin Authentication</h3>
+        <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">Admin Password डालें</label>
+          <input type="password" id="adminPasswordInput" onkeydown="if(event.key==='Enter') verifyAdminPassword()" placeholder="••••••••"
+            class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white focus:border-amber-400 focus:outline-none" />
+          <p id="adminErrorMsg" class="text-rose-400 text-[11px] mt-1 hidden">गलत पासवर्ड! कृपया पुनः प्रयास करें।</p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeAdminModal()" class="px-3 py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700">रद्द करें</button>
+        <button onclick="verifyAdminPassword()" class="px-4 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold">Unlock</button>
+      </div>
+    </div>
+  </div>
 
+  <!-- Add Weekly Course Modal -->
+  <div id="weeklyCourseModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-card rounded-xl p-6 max-w-md w-full border border-cyan-500/40 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-cyan-300 brand-font">➕ Add New Weekly Course</h3>
+        <button onclick="closeAddWeeklyCourseModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">शनिवार की तिथि (Saturday Date)</label>
+          <input type="date" id="modalCourseDate" min="2026-08-01" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">कोर्स का नाम (Course Name)</label>
+          <input type="text" id="modalCourseName" placeholder="उदा. New Criminal Laws Training" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white focus:border-cyan-400 focus:outline-none" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeAddWeeklyCourseModal()" class="px-3 py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700">रद्द करें</button>
+        <button onclick="saveWeeklyCourse()" class="px-4 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-semibold">सेव करें</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVssH7GDA7jV4xFN8YA-wCP6B_sZxNNXdYhsUzCN4PkXAvDVrY_CNqcPC0pJCikeuv-A/exec";
+    const ADMIN_PASS = "admin@123"; // अपना Admin Password यहाँ बदलें
+
+    let isAdminUnlocked = false;
     let masterData = [];
     let filteredData = [];
+    let weeklyCourses = {};
     let currentPage = 1;
     const rowsPerPage = 15;
     let sortAsc = false;
-
-    let doughnutChartInst = null;
     let barChartInst = null;
 
+    // कैलेंडर करंट व्यू डेट (01 अगस्त 2026 से शुरू)
+    let currentCalendarDate = new Date(2026, 7, 1);
+
     window.addEventListener("DOMContentLoaded", () => {
+      renderCalendar();
+      updateLatestCourseTicker();
       fetchLiveCloudData();
     });
+
+    function updateLatestCourseTicker() {
+      const marqueeEl = document.getElementById("latestCourseMarqueeText");
+      if (!marqueeEl) return;
+
+      const entries = Object.entries(weeklyCourses || {})
+        .filter(([dateStr, courseName]) => String(dateStr || "").trim() !== "" && String(courseName || "").trim() !== "")
+        .sort((a, b) => String(b[0]).localeCompare(String(a[0])));
+
+      if (entries.length === 0) {
+        marqueeEl.textContent = "अभी कोई Weekly Course असाइन नहीं किया गया है।";
+        return;
+      }
+
+      const [latestDate, latestCourse] = entries[0];
+      marqueeEl.textContent = `Latest Weekly Course (${latestDate} - शनिवार): ${latestCourse}`;
+    }
+
+    function handleAdminButtonClick() {
+      if (isAdminUnlocked) {
+        isAdminUnlocked = false;
+        updateAdminUI();
+        return;
+      }
+      document.getElementById("adminErrorMsg").classList.add("hidden");
+      const input = document.getElementById("adminPasswordInput");
+      input.value = "";
+      document.getElementById("adminPasswordModal").classList.remove("hidden");
+      setTimeout(() => input.focus(), 50);
+    }
+
+    function closeAdminModal() {
+      document.getElementById("adminPasswordModal").classList.add("hidden");
+    }
+
+    function verifyAdminPassword() {
+      const entered = document.getElementById("adminPasswordInput").value;
+      if (entered === ADMIN_PASS) {
+        isAdminUnlocked = true;
+        updateAdminUI();
+        closeAdminModal();
+      } else {
+        document.getElementById("adminErrorMsg").classList.remove("hidden");
+      }
+    }
+
+    function updateAdminUI() {
+      const addBtn = document.getElementById("addWeeklyCourseBtn");
+      const adminBtn = document.getElementById("adminToggleBtn");
+
+      if (isAdminUnlocked) {
+        addBtn.classList.remove("hidden");
+        adminBtn.className = "px-3.5 py-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-400 text-emerald-300 text-xs font-semibold transition flex items-center gap-1.5";
+        adminBtn.textContent = "🔓 Admin (Lock)";
+      } else {
+        addBtn.classList.add("hidden");
+        adminBtn.className = "px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-amber-300 text-xs font-semibold transition flex items-center gap-1.5";
+        adminBtn.textContent = "🔐 Admin";
+      }
+    }
 
     function formatTimestamp(ts) {
       if (!ts) return "-";
@@ -202,6 +379,13 @@
         day: "2-digit", month: "2-digit", year: "numeric",
         hour: "2-digit", minute: "2-digit", hour12: true
       });
+    }
+
+    function getLocalISODate(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
 
     async function fetchLiveCloudData() {
@@ -215,23 +399,26 @@
 
         if (data.status === "success") {
           masterData = data.records || [];
+          weeklyCourses = data.weeklyCourses || {};
           const formattedTime = formatTimestamp(data.lastUpdated || new Date());
 
           badge.className = "text-xs px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
           badge.textContent = `● Live Cloud Data (${masterData.length.toLocaleString()} Records) • Updated: ${formattedTime}`;
           
+          updateLatestCourseTicker();
           populateCourseDropdown();
           applyFilters();
+          renderCalendar();
         } else {
           throw new Error(data.message || "Failed to load data");
         }
       } catch (err) {
+        console.error(err);
         badge.className = "text-xs px-3 py-1.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30";
-        badge.textContent = `⚠️ Error: SCRIPT_URL जाँचें`;
+        badge.textContent = "⚠️ Error: SCRIPT_URL जाँचें";
       }
     }
 
-    // यदि एक सेल में कॉमा (,) से अलग कई कोर्स हों तो उन्हें भी अलग-अलग गिनने के लिए
     function extractCourses(courseStr) {
       if (!courseStr) return [];
       return String(courseStr).split(",").map(c => c.trim()).filter(Boolean);
@@ -242,6 +429,7 @@
       masterData.forEach(r => {
         extractCourses(r["Courses"]).forEach(c => courseSet.add(c));
       });
+      Object.values(weeklyCourses).forEach(c => courseSet.add(c));
       const courses = [...courseSet].sort();
 
       document.getElementById("courseFilter").innerHTML =
@@ -267,9 +455,11 @@
         if (fromDate || toDate) {
           const rowDateObj = new Date(row["Timestamp"]);
           if (!isNaN(rowDateObj.getTime())) {
-            const rowDateStr = rowDateObj.toISOString().split("T")[0];
+            const rowDateStr = getLocalISODate(rowDateObj);
             if (fromDate && rowDateStr < fromDate) matchDate = false;
             if (toDate && rowDateStr > toDate) matchDate = false;
+          } else {
+            matchDate = false;
           }
         }
 
@@ -293,15 +483,8 @@
     function toggleSort(column) {
       sortAsc = !sortAsc;
       filteredData.sort((a, b) => {
-        let valA = a[column] || "";
-        let valB = b[column] || "";
-        if (column === "Timestamp") {
-          valA = new Date(valA).getTime() || 0;
-          valB = new Date(valB).getTime() || 0;
-          return sortAsc ? valA - valB : valB - valA;
-        }
-        valA = String(valA).toLowerCase();
-        valB = String(valB).toLowerCase();
+        let valA = String(a[column] || "").toLowerCase();
+        let valB = String(b[column] || "").toLowerCase();
         if (valA < valB) return sortAsc ? -1 : 1;
         if (valA > valB) return sortAsc ? 1 : -1;
         return 0;
@@ -310,93 +493,62 @@
       renderTable();
     }
 
-   function updateKPIs() {
-      // 1. कुल Personnel (जिस पर फ़िल्टर का कोई असर नहीं होता - सभी दर्ज Names)
+    function updateKPIs() {
       const totalNamesCount = masterData.filter(r => String(r["Name"] || "").trim() !== "").length;
-
-      // 2. Form Submissions: masterData (या filteredData?) - यदि इस पर भी फ़िल्टर का असर नहीं चाहिए या फ़िल्टर के साथ बदलना है, 
-      // यूजर के निर्देशानुसार "जितने pno दर्ज हुए उनसे निकाला जाये": यहाँ हम masterData या filteredData के यूनिक PNOs ले सकते हैं।
-      // यदि कुल masterData के यूनिक PNOs लेने हैं (ताकि फ़िल्टर का असर न पड़े या फ़िल्टर के साथ बदले):
-      const masterUniquePnos = new Set(masterData.map(r => String(r["Pno"] || "").trim()).filter(Boolean));
-      const filteredUniquePnos = new Set(filteredData.map(r => String(r["Pno"] || "").trim()).filter(Boolean));
-
-      // यहाँ Form Submissions में फ़िल्टर किए गए यूनिक PNOs की संख्या या कुल यूनिक PNOs दिखाए जा सकते हैं। 
-      // चूँकि यूजर ने कहा "जितने pno दर्ज हुए उनसे", हम filteredUniquePnos (या masterUniquePnos) का उपयोग कर सकते हैं:
+      const filteredUniquePnos = new Set(
+        filteredData
+          .filter(r => extractCourses(r["Courses"]).length > 0)
+          .map(r => String(r["Pno"] || "").trim())
+          .filter(Boolean)
+      );
       const formSubmissionsCount = filteredUniquePnos.size; 
-      const totalMasterPnosCount = masterUniquePnos.size;
-
-      // प्रतिशत: (Form Submissions के यूनिक PNOs / Total Personnel) * 100
       const percentage = totalNamesCount > 0 ? ((formSubmissionsCount / totalNamesCount) * 100).toFixed(1) : "0.0";
 
-      // अन्य गणनाएँ
-      const uniqueCourses = new Set();
-      filteredData.forEach(r => extractCourses(r["Courses"]).forEach(c => uniqueCourses.add(c)));
+      const scheduledWeekendCoursesCount = Object.keys(weeklyCourses).length;
 
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = getLocalISODate(new Date());
       const todayCount = filteredData.filter(r => {
         const d = new Date(r["Timestamp"]);
-        return !isNaN(d.getTime()) && d.toISOString().split("T")[0] === todayStr;
+        return !isNaN(d.getTime()) && getLocalISODate(d) === todayStr;
       }).length;
 
-      // DOM में वैल्यू अपडेट करना
       document.getElementById("kpiTotalEntries").textContent = formSubmissionsCount.toLocaleString();
       document.getElementById("kpiTotalPct").textContent = `${percentage}% of total`;
-      
-      // Total Personnel कार्ड में सभी Name की कुल संख्या (फ़िल्टर प्रभावहीन)
       document.getElementById("kpiUniquePno").textContent = totalNamesCount.toLocaleString();
-      
-      document.getElementById("kpiUniqueCourses").textContent = uniqueCourses.size.toLocaleString();
+      document.getElementById("kpiUniqueCourses").textContent = scheduledWeekendCoursesCount.toLocaleString();
       document.getElementById("kpiTodayCount").textContent = todayCount.toLocaleString();
     }
 
     function updateCharts() {
-      const courseCounts = {};
+      const personMap = {};
       filteredData.forEach(r => {
-        const courses = extractCourses(r["Courses"]);
-        if (courses.length === 0) {
-          courseCounts["Unspecified"] = (courseCounts["Unspecified"] || 0) + 1;
-        } else {
-          courses.forEach(c => {
-            courseCounts[c] = (courseCounts[c] || 0) + 1;
-          });
+        const pno = String(r["Pno"] || "").trim();
+        const name = String(r["Name"] || "").trim() || "Unknown";
+        const courseCount = extractCourses(r["Courses"]).length;
+
+        if (pno && courseCount > 0) {
+          if (!personMap[pno]) {
+            personMap[pno] = { name: name, totalCourses: 0 };
+          }
+          personMap[pno].totalCourses += courseCount;
         }
       });
 
-      const sortedEntries = Object.entries(courseCounts).sort((a, b) => b[1] - a[1]);
-      const labels = sortedEntries.map(e => e[0]);
-      const counts = sortedEntries.map(e => e[1]);
+      const topPersons = Object.values(personMap)
+        .sort((a, b) => b.totalCourses - a.totalCourses)
+        .slice(0, 10);
 
-      const palette = [
-        "#06b6d4", "#10b981", "#3b82f6", "#f59e0b", "#8b5cf6",
-        "#ec4899", "#ef4444", "#14b8a6", "#f97316", "#6366f1"
-      ];
-
-      if (doughnutChartInst) doughnutChartInst.destroy();
-      doughnutChartInst = new Chart(document.getElementById("courseDoughnutChart"), {
-        type: "doughnut",
-        data: {
-          labels: labels,
-          datasets: [{
-            data: counts,
-            backgroundColor: labels.map((_, i) => palette[i % palette.length]),
-            borderColor: "#0f172a",
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: "bottom", labels: { color: "#cbd5e1", font: { size: 11 } } } }
-        }
-      });
+      const personNames = topPersons.map(p => p.name);
+      const personScores = topPersons.map(p => p.totalCourses);
 
       if (barChartInst) barChartInst.destroy();
       barChartInst = new Chart(document.getElementById("courseBarChart"), {
         type: "bar",
         data: {
-          labels: labels.slice(0, 10),
+          labels: personNames,
           datasets: [{
-            label: "Completions",
-            data: counts.slice(0, 10),
+            label: "Courses Completed",
+            data: personScores,
             backgroundColor: "rgba(56, 189, 248, 0.7)",
             borderColor: "#38bdf8",
             borderWidth: 1,
@@ -414,6 +566,139 @@
       });
     }
 
+    function renderCalendar() {
+      const grid = document.getElementById("calendarGrid");
+      const title = document.getElementById("calendarMonthTitle");
+      
+      const year = currentCalendarDate.getFullYear();
+      const month = currentCalendarDate.getMonth();
+
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      title.textContent = `${monthNames[month]} ${year}`;
+
+      grid.innerHTML = "";
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDayIndex; i++) {
+        grid.innerHTML += `<div class="p-1 rounded bg-slate-900/10 opacity-20"></div>`;
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const mm = String(month + 1).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        const dateStr = `${year}-${mm}-${dd}`;
+
+        const dateObj = new Date(year, month, day);
+        const isSaturday = dateObj.getDay() === 6;
+        const courseName = weeklyCourses[dateStr];
+
+        let cellClass = "p-1 rounded flex flex-col items-center justify-center transition text-center relative ";
+        let content = `<span class="font-medium">${day}</span>`;
+
+        if (dateStr < "2026-08-01") {
+          cellClass += " bg-slate-900/30 text-slate-600 opacity-40";
+        } else if (isSaturday) {
+          if (courseName) {
+            cellClass += " bg-emerald-500/25 border border-emerald-400 text-emerald-200 cursor-pointer hover:bg-emerald-500/40 font-bold";
+          } else {
+            cellClass += " bg-slate-900/60 text-cyan-300 cursor-pointer hover:bg-slate-800 border border-slate-800";
+          }
+        } else {
+          cellClass += " bg-slate-900/60 text-slate-300 hover:bg-slate-800";
+        }
+
+        const div = document.createElement("div");
+        div.className = cellClass;
+        div.innerHTML = content;
+
+        if (isSaturday && dateStr >= "2026-08-01") {
+          div.onclick = () => {
+            const infoBox = document.getElementById("selectedSaturdayInfo");
+            if (courseName) {
+              infoBox.innerHTML = `<span class="text-emerald-300 font-semibold">${dateStr} (शनिवार): <b>${courseName}</b></span>`;
+            } else {
+              infoBox.innerHTML = `<span class="text-slate-400">${dateStr} (शनिवार): कोई कोर्स असाइन नहीं।</span>`;
+            }
+          };
+        }
+
+        grid.appendChild(div);
+      }
+    }
+
+    function changeMonth(delta) {
+      const targetDate = new Date(currentCalendarDate);
+      targetDate.setMonth(targetDate.getMonth() + delta);
+      
+      const minDate = new Date(2026, 7, 1);
+      if (targetDate < minDate) {
+        return; 
+      }
+
+      currentCalendarDate = targetDate;
+      renderCalendar();
+    }
+
+    function openAddWeeklyCourseModal() {
+      if (!isAdminUnlocked) return;
+      document.getElementById("weeklyCourseModal").classList.remove("hidden");
+    }
+
+    function closeAddWeeklyCourseModal() {
+      document.getElementById("weeklyCourseModal").classList.add("hidden");
+    }
+
+    async function saveWeeklyCourse() {
+      if (!isAdminUnlocked) return;
+
+      const dateVal = document.getElementById("modalCourseDate").value;
+      const courseVal = document.getElementById("modalCourseName").value.trim();
+
+      if (!dateVal || !courseVal) {
+        alert("कृपया तिथि और कोर्स का नाम दोनों भरें।");
+        return;
+      }
+
+      const [y, m, dNum] = dateVal.split("-").map(Number);
+      const d = new Date(y, m - 1, dNum);
+
+      if (d.getDay() !== 6) {
+        alert("चेतावनी: चुनी गई तिथि शनिवार (Saturday) नहीं है। कृपया शनिवार की तारीख चुनें।");
+        return;
+      }
+
+      weeklyCourses[dateVal] = courseVal;
+      closeAddWeeklyCourseModal();
+      
+      currentCalendarDate = new Date(d.getFullYear(), d.getMonth(), 1);
+      updateLatestCourseTicker();
+      renderCalendar();
+      populateCourseDropdown();
+      updateKPIs();
+
+      try {
+        const payload = {
+          action: "saveWeeklyCourse",
+          date: dateVal,
+          course: courseVal
+        };
+
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        alert(`सफलतापूर्वक कोर्स '${courseVal}' गूगल शीट पर सेव हो गया है!`);
+      } catch (err) {
+        console.error("Cloud save error:", err);
+        alert("लोकल रूप से सेव हो गया, लेकिन क्लाउड सिंक में त्रुटि हुई।");
+      }
+    }
+
     function renderTable() {
       const tbody = document.getElementById("dataTableBody");
       const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
@@ -429,7 +714,7 @@
       document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
 
       if (pageRows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">कोई रिकॉर्ड नहीं मिला। फ़िल्टर बदलें या डेटा रिफ्रेश करें।</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">कोई रिकॉर्ड नहीं मिला। फ़िल्टर बदलें या डेटा रिफ्रेश करें।</td></tr>`;
         return;
       }
 
@@ -466,7 +751,6 @@
       tbody.innerHTML = filteredData.map((r, index) => `
         <tr style="border-bottom: 1px solid #cbd5e1; color: #000000 !important; background-color: #ffffff !important;">
           <td style="padding: 6px 8px; font-weight: bold;">${index + 1}</td>
-          <td style="padding: 6px 8px;">${formatTimestamp(r["Timestamp"])}</td>
           <td style="padding: 6px 8px; font-family: monospace;">${r["Pno"] || "-"}</td>
           <td style="padding: 6px 8px; font-weight: 500;">${r["Name"] || "-"}</td>
           <td style="padding: 6px 8px;">${r["Courses"] || "-"}</td>
