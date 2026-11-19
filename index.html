@@ -245,10 +245,10 @@
         <table class="w-full text-left border-collapse text-xs">
           <thead>
             <tr class="bg-slate-900/90 text-slate-300 border-b border-slate-700 uppercase">
-              <th class="py-3 px-4">SR.NO.</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-cyan-400" onclick="toggleSort('Pno')">PNO ↕️</th>
+              <th class="py-3 px-4 w-24">SR.NO.</th>
+              <th class="py-3 px-4 cursor-pointer hover:text-cyan-400 w-40" onclick="toggleSort('Pno')">PNO ↕️</th>
               <th class="py-3 px-4 cursor-pointer hover:text-cyan-400" onclick="toggleSort('Name')">Name ↕️</th>
-              <th class="py-3 px-4 cursor-pointer hover:text-cyan-400" onclick="toggleSort('Courses')">Completed Courses ↕️</th>
+              <th class="py-3 px-4 cursor-pointer hover:text-cyan-400 w-48" onclick="toggleSort('CompleteCourses')">Complete Courses ↕️</th>
             </tr>
           </thead>
           <tbody id="dataTableBody" class="divide-y divide-slate-800/80 text-slate-200"></tbody>
@@ -324,6 +324,7 @@
     let masterData = [];
     let filteredData = [];
     let weeklyCourses = {};
+    let expandedRowIds = new Set();
     let currentPage = 1;
     const rowsPerPage = 15;
     let sortAsc = false;
@@ -331,6 +332,23 @@
     let liveSyncTimer = null;
     let totalPersonnelFixed = loadSavedTotalPersonnel();
     let currentCalendarDate = new Date(2026, 7, 1);
+
+    function getRowExpandKey(row, fallbackIdx = 0) {
+      const pno = String(row["Pno"] || "").trim();
+      const name = String(row["Name"] || "").trim();
+      const ts = String(getRecordTimestamp(row) || "").trim();
+      return `${pno}__${name}__${ts}__${fallbackIdx}`;
+    }
+
+    function toggleRowExpansion(rowKey) {
+      if (!rowKey) return;
+      if (expandedRowIds.has(rowKey)) {
+        expandedRowIds.delete(rowKey);
+      } else {
+        expandedRowIds.add(rowKey);
+      }
+      renderTable();
+    }
 
     function loadSavedTotalPersonnel() {
       const saved = localStorage.getItem(PERSONNEL_STORAGE_KEY);
@@ -724,7 +742,7 @@
       const toDate = document.getElementById("toDateFilter").value;
 
       filteredData = masterData
-        .map(row => {
+        .map((row, idx) => {
           const completedList = extractCompletedCourses(row);
           const visibleCourses = selectedCourse === "ALL"
             ? completedList
@@ -732,6 +750,7 @@
 
           return {
             ...row,
+            _expandKey: getRowExpandKey(row, idx),
             _completedCourses: completedList,
             _visibleCourses: visibleCourses
           };
@@ -775,12 +794,13 @@
     function toggleSort(column) {
       sortAsc = !sortAsc;
       filteredData.sort((a, b) => {
-        let valA = column === "Courses"
-          ? (a._visibleCourses || []).join(", ").toLowerCase()
-          : String(a[column] || "").toLowerCase();
-        let valB = column === "Courses"
-          ? (b._visibleCourses || []).join(", ").toLowerCase()
-          : String(b[column] || "").toLowerCase();
+        if (column === "CompleteCourses") {
+          const countA = (a._visibleCourses || []).length;
+          const countB = (b._visibleCourses || []).length;
+          return sortAsc ? countA - countB : countB - countA;
+        }
+        let valA = String(a[column] || "").toLowerCase();
+        let valB = String(b[column] || "").toLowerCase();
         if (valA < valB) return sortAsc ? -1 : 1;
         if (valA > valB) return sortAsc ? 1 : -1;
         return 0;
@@ -1055,18 +1075,47 @@
 
       tbody.innerHTML = pageRows.map((r, index) => {
         const srNo = start + index + 1;
+        const rowKey = r._expandKey || getRowExpandKey(r, start + index);
+        const isExpanded = expandedRowIds.has(rowKey);
         const coursesList = r._visibleCourses || [];
-        const courseBadges = coursesList.length
-          ? coursesList.map(c => `<span class="inline-block px-2 py-0.5 mr-1 mb-1 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-medium">${c}</span>`).join("")
-          : `<span class="text-slate-500">-</span>`;
+        const courseCount = coursesList.length;
+
+        const courseBadges = courseCount
+          ? coursesList.map(c => `<span class="inline-block px-2 py-0.5 mr-1.5 mb-1 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-medium">${c}</span>`).join("")
+          : `<span class="text-slate-500">कोई कोर्स नहीं</span>`;
+
+        const detailRowHtml = isExpanded
+          ? `
+            <tr class="hover:bg-slate-800/40 transition bg-slate-950/60">
+              <td colspan="4" class="py-2.5 px-4 border-b border-slate-700/80">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="text-[11px] font-semibold uppercase tracking-wide text-amber-300 mr-1">Completed Courses:</span>
+                  ${courseBadges}
+                </div>
+              </td>
+            </tr>
+          `
+          : "";
 
         return `
-          <tr class="hover:bg-slate-800/50 transition">
+          <tr class="hover:bg-slate-800/50 transition bg-slate-900/30 ${!isExpanded ? 'border-b border-slate-800/80' : ''}">
             <td class="py-2.5 px-4 font-mono text-cyan-400 font-bold">${srNo}</td>
             <td class="py-2.5 px-4 font-mono text-emerald-300 font-semibold">${r["Pno"] || "-"}</td>
             <td class="py-2.5 px-4 font-medium text-white">${r["Name"] || "-"}</td>
-            <td class="py-2.5 px-4">${courseBadges}</td>
+            <td class="py-2.5 px-4">
+              <div class="inline-flex items-center gap-2.5">
+                <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono font-bold">
+                  ${courseCount}
+                </span>
+                <button type="button" onclick="toggleRowExpansion('${rowKey.replace(/'/g, "\\'")}')"
+                  title="${isExpanded ? 'कोर्स सूची छिपाएं' : 'कोर्स सूची देखें'}"
+                  class="w-6 h-6 rounded-md ${isExpanded ? 'bg-amber-500/20 text-amber-300 border-amber-400/50 hover:bg-amber-500/35' : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50 hover:bg-emerald-500/35'} border font-bold text-sm leading-none flex items-center justify-center transition cursor-pointer">
+                  ${isExpanded ? '−' : '+'}
+                </button>
+              </div>
+            </td>
           </tr>
+          ${detailRowHtml}
         `;
       }).join("");
     }
@@ -1089,13 +1138,19 @@
 
       const tbody = document.getElementById("dataTableBody");
       tbody.innerHTML = filteredData.map((r, index) => {
-        const coursesText = (r._visibleCourses || []).join(", ") || "-";
+        const coursesList = r._visibleCourses || [];
+        const coursesText = coursesList.join(", ") || "-";
         return `
-          <tr style="border-bottom: 1px solid #cbd5e1; color: #000000 !important; background-color: #ffffff !important;">
+          <tr style="color: #000000 !important; background-color: #ffffff !important;">
             <td style="padding: 6px 8px; font-weight: bold;">${index + 1}</td>
             <td style="padding: 6px 8px; font-family: monospace;">${r["Pno"] || "-"}</td>
             <td style="padding: 6px 8px; font-weight: 500;">${r["Name"] || "-"}</td>
-            <td style="padding: 6px 8px;">${coursesText}</td>
+            <td style="padding: 6px 8px; font-weight: bold;">${coursesList.length}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #cbd5e1; color: #000000 !important; background-color: #f8fafc !important;">
+            <td colspan="4" style="padding: 6px 8px;">
+              <strong>Completed Courses:</strong> ${coursesText}
+            </td>
           </tr>
         `;
       }).join("");
