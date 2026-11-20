@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Course Completion Analytics Dashboard | Lucknow Commissionerate</title>
+  <title>iGOT Courses Analytics Dashboard | Police Station BBD Lucknow Commissionerate</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
@@ -170,7 +170,7 @@
       </div>
 
       <div class="glass-card rounded-xl p-5 border-l-4 border-l-purple-400">
-        <p class="text-xs text-slate-400 uppercase font-semibold">Today's Entries</p>
+        <p class="text-xs text-slate-400 uppercase font-semibold">Today's Update</p>
         <div class="flex items-baseline justify-between mt-2">
           <h4 id="kpiTodayCount" class="text-3xl font-bold text-purple-400">0</h4>
           <span class="text-xs text-purple-300 font-medium">Live Today</span>
@@ -266,14 +266,14 @@
       </div>
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block text-slate-400 mb-1">Admin Username</label>
+          <label class="block text-slate-400 mb-1">Username</label>
           <input type="text" id="adminUsernameInput" autocomplete="username"
             onkeydown="if(event.key==='Enter') document.getElementById('adminPasswordInput').focus()"
-            placeholder="Enter Username"
+            placeholder="Username"
             class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white focus:border-amber-400 focus:outline-none" />
         </div>
         <div>
-          <label class="block text-slate-400 mb-1">Admin Password</label>
+          <label class="block text-slate-400 mb-1">Password</label>
           <input type="password" id="adminPasswordInput" autocomplete="current-password"
             onkeydown="if(event.key==='Enter') verifyAdminCredentials()"
             placeholder="••••••••"
@@ -282,7 +282,7 @@
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeAdminModal()" class="px-3 py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700">रद्द करें</button>
+        <button onclick="closeAdminModal()" class="px-3 py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700">Close</button>
         <button id="adminLoginSubmitBtn" onclick="verifyAdminCredentials()" class="px-4 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold disabled:opacity-50">
           Unlock
         </button>
