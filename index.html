@@ -245,35 +245,52 @@
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
-<<div id="appSplash">
-  <div class="splash-logo-wrap">
-    <img src="icon-192.png" alt="iGOT Dashboard Logo">
-  </div>
-  <h2 class="splash-title">iGOT Courses Analytics</h2>
-  <p class="splash-subtitle">Police Station BBD • Lucknow Commissionerate</p>
-  <div class="splash-loader">
-    <div class="splash-loader-bar"></div>
-  </div>
-</div>
-<script>
-  (function () {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    const splash = document.getElementById('appSplash');
 
-    if (!isStandalone) {
-      if (splash) splash.remove();
-      return;
-    }
+  <!-- 1. PWA SPLASH SCREEN -->
+  <div id="appSplash">
+    <div class="splash-logo-wrap">
+      <img src="icon-192.png" alt="iGOT Dashboard Logo">
+    </div>
+    <h2 class="splash-title">iGOT Courses Analytics</h2>
+    <p class="splash-subtitle">Police Station BBD • Lucknow Commissionerate</p>
+    <div class="splash-loader">
+      <div class="splash-loader-bar"></div>
+    </div>
+  </div>
 
-    // Bina window.load ka intezar kiye turant timer shuru karein
-    setTimeout(() => {
-      if (splash) {
-        splash.classList.add('hide');
-        setTimeout(() => splash.remove(), 450);
+  <!-- 2. PWA INSTALL SUCCESS OVERLAY (Dark Theme) -->
+  <div id="installOverlay">
+    <div class="install-card">
+      <svg class="checkmark" viewBox="0 0 52 52">
+        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+      </svg>
+      <h3 style="margin: 0 0 6px; color: #f8fafc; font-family: 'Orbitron', sans-serif; font-size: 16px;">App Installed!</h3>
+      <p style="margin: 0; color: #94a3b8; font-size: 13px;">
+        iGOT Analytics Dashboard ab aapki Home Screen par taiyar hai.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      const splash = document.getElementById('appSplash');
+
+      if (!isStandalone) {
+        if (splash) splash.remove();
+        return;
       }
-    }, 1500);
-  })();
-</script>
+
+      // Bina window.load ka intezar kiye turant timer shuru karein
+      setTimeout(() => {
+        if (splash) {
+          splash.classList.add('hide');
+          setTimeout(() => splash.remove(), 450);
+        }
+      }, 1500);
+    })();
+  </script>
   <!-- Top Navbar -->
   <header class="glass-card sticky top-0 z-40 border-b border-cyan-500/30 px-6 py-4 no-print">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
