@@ -1,6 +1,6 @@
 {
   "name": "Mera Web App",
-  "short_name": "WebApp",
+  "short_name": "iGOT PS BBD",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
