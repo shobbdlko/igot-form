@@ -2,49 +2,23 @@
 <html lang="hi">
 <head>
   <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#0f172a" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1120" />
 
-<!-- PWA Manifest & iOS Support -->
-<link rel="manifest" href="manifest.json" />
-<link rel="apple-touch-icon" href="icon-192.png" />
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="iGOT BBD" />
-<title>iGOT Courses Analytics Dashboard | Police Station BBD Lucknow Commissionerate</title>
+  <!-- PWA Manifest & iOS Support -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="iGOT BBD" />
+  <title>iGOT Courses Analytics Dashboard | Police Station BBD Lucknow Commissionerate</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-  <style>
-/* Purane .splash-logo-wrap aur @keyframes logoFloat ko isse replace karein */
-.splash-logo-wrap {
-  width: 104px;
-  height: 104px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 1; /* Turant visible rahega */
-  animation: iconPulse 1.4s ease-in-out infinite;
-}
 
-@keyframes iconPulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.45);
-  }
-  50% {
-    transform: scale(1.06);
-    box-shadow: 0 0 0 16px rgba(56, 189, 248, 0);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
-  }
-}
+  <style>
     body { font-family: 'Inter', sans-serif; background-color: #0b1120; color: #e2e8f0; }
     .brand-font { font-family: 'Orbitron', sans-serif; }
     .glass-card {
@@ -57,6 +31,187 @@
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+
+    /* ================= PWA SPLASH SCREEN ================= */
+    #appSplash {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #111c33 0%, #0b1120 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      transition: opacity 0.45s ease, visibility 0.45s ease;
+    }
+
+    #appSplash.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-logo-wrap {
+      width: 104px;
+      height: 104px;
+      border-radius: 24px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      animation: iconPulse 1.4s ease-in-out infinite;
+    }
+
+    .splash-logo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 14px;
+    }
+
+    .splash-title {
+      font-family: 'Orbitron', sans-serif;
+      color: #f8fafc;
+      font-size: 18px;
+      font-weight: 700;
+      margin: 20px 0 6px;
+      letter-spacing: 0.6px;
+      text-align: center;
+      animation: fadeUp 0.5s ease forwards;
+    }
+
+    .splash-subtitle {
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 500;
+      margin: 0 0 22px;
+      letter-spacing: 0.4px;
+      text-align: center;
+      animation: fadeUp 0.5s ease 0.15s forwards;
+    }
+
+    .splash-loader {
+      width: 170px;
+      height: 4px;
+      background: rgba(56, 189, 248, 0.15);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .splash-loader-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #0284c7, #38bdf8);
+      border-radius: 99px;
+      animation: loadProgress 1.35s ease-in-out forwards;
+    }
+
+    /* ================= PWA INSTALL BUTTON & OVERLAY ================= */
+    .btn-install-animated {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: #0284c7;
+      color: #ffffff;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      animation: pulseGlow 2s infinite;
+      transition: background 0.2s ease;
+    }
+
+    .btn-install-animated:hover {
+      background: #0369a1;
+    }
+
+    #installOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 17, 32, 0.88);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #installOverlay.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .install-card {
+      background: #0f172a;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 28px 36px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      transform: scale(0.8);
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    .checkmark {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 12px;
+    }
+
+    .checkmark-circle {
+      stroke: #22c55e;
+      stroke-width: 3;
+      stroke-dasharray: 166;
+      stroke-dashoffset: 166;
+      animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+
+    .checkmark-check {
+      stroke: #22c55e;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+      animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.5s forwards;
+    }
+
+    @keyframes iconPulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.45); }
+      50% { transform: scale(1.06); box-shadow: 0 0 0 16px rgba(56, 189, 248, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+    }
+
+    @keyframes pulseGlow {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.55); }
+      70% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(56, 189, 248, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+    }
+
+    @keyframes fadeUp {
+      0% { transform: translateY(6px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes loadProgress {
+      0% { width: 0%; }
+      60% { width: 75%; }
+      100% { width: 100%; }
+    }
+
+    @keyframes popIn {
+      to { transform: scale(1); }
+    }
+
+    @keyframes stroke {
+      100% { stroke-dashoffset: 0; }
+    }
 
     /* Right-to-Left Moving Ticker Animation */
     @keyframes marqueeRtl {
