@@ -1619,14 +1619,31 @@
     });
   }
 
-  // App install hone ke baad button ko permanently chhupa dein
-  window.addEventListener('appinstalled', () => {
-    console.log('iGOT Dashboard PWA successfully installed!');
-    deferredPrompt = null;
-    if (installBtn) {
-      installBtn.style.display = 'none';
-    }
-  });
+    <!-- Aapka existing dashboard aur splash screen HTML yahan upar hoga -->
+  <div id="splash-screen">
+    <!-- Splash screen content -->
+  </div>
+
+  <!-- Is script ko </body> se theek pehle lagayein -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const splash = document.getElementById('splash-screen');
+      if (!splash) return;
+
+      if (sessionStorage.getItem('splashShown')) {
+        splash.style.display = 'none';
+      } else {
+        sessionStorage.setItem('splashShown', 'true');
+        setTimeout(() => {
+          splash.style.opacity = '0';
+          setTimeout(() => splash.remove(), 400);
+        }, 1200);
+      }
+    });
+  </script>
+</body>
+</html>
+
 </script>
 </body>
 </html>
