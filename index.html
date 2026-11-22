@@ -242,6 +242,33 @@
       }
       .no-print { display: none !important; }
     }
+.install-app-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  transition: all 0.2s ease;
+}
+
+.install-app-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  transform: translateY(-1px);
+}
+
+/* A4 PDF Print karte waqt button ko hide rakhein */
+@media print {
+  .install-app-btn {
+    display: none !important;
+  }
+}
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -313,6 +340,14 @@
         <button onclick="fetchLiveCloudData()" class="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-lg shadow-cyan-500/20 transition">
           🔄 Refresh Data
         </button>
+<button id="pwaInstallBtn" class="install-app-btn" style="display: none;" title="Install Dashboard App">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+    <polyline points="7 10 12 15 17 10"></polyline>
+    <line x1="12" y1="15" x2="12" y2="3"></line>
+  </svg>
+  <span>Install App</span>
+</button>
         <a href="./update.html" class="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-500/20 transition inline-flex items-center gap-1.5">
           📝 Update Your Record
         </a>
@@ -1550,5 +1585,48 @@
       });
     }
   </script>
+<script>
+  let deferredPrompt;
+  const installBtn = document.getElementById('pwaInstallBtn');
+
+  // Jab browser PWA install ke liye ready ho
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Chrome ke default mini-infobar ko rokein
+    e.preventDefault();
+    // Event ko baad mein trigger karne ke liye save karein
+    deferredPrompt = e;
+    // Header wala Install App button dikhayein
+    if (installBtn) {
+      installBtn.style.display = 'inline-flex';
+    }
+  });
+
+  // Button click par install prompt kholein
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      
+      // Native install prompt dikhayein
+      deferredPrompt.prompt();
+      
+      // User ke choice ka wait karein (accepted / dismissed)
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User install choice: ${outcome}`);
+      
+      // Prompt sirf ek baar use ho sakta hai, isliye reset karein
+      deferredPrompt = null;
+      installBtn.style.display = 'none';
+    });
+  }
+
+  // App install hone ke baad button ko permanently chhupa dein
+  window.addEventListener('appinstalled', () => {
+    console.log('iGOT Dashboard PWA successfully installed!');
+    deferredPrompt = null;
+    if (installBtn) {
+      installBtn.style.display = 'none';
+    }
+  });
+</script>
 </body>
 </html>
