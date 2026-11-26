@@ -214,19 +214,29 @@
     }
 
     /* Right-to-Left Moving Ticker Animation */
-    @keyframes marqueeRtl {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(100vw); }
-    }
-    .marquee-track {
-      display: inline-block;
-      white-space: nowrap;
-      padding-left: 2rem;
-      animation: marqueeRtl 35s linear infinite;
-    }
-    .marquee-wrapper:hover .marquee-track {
-      animation-play-state: paused;
-    }
+    .marquee-wrapper {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@keyframes marqueeSeamless {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%); /* Shifts exactly half its duplicated width */
+  }
+}
+
+.marquee-track {
+  display: inline-flex;
+  width: max-content;
+  animation: marqueeSeamless 35s linear infinite;
+}
+
+.marquee-wrapper:hover .marquee-track {
+  animation-play-state: paused;
+}
 
     @media print {
       body * { visibility: hidden; }
