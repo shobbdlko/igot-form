@@ -775,7 +775,8 @@
 
       const [latestDate, latestEntry] = entries[0];
       const { name: latestCourse } = parseWeeklyCourseEntry(latestEntry);
-      marqueeEl.textContent = 'Latest Weekly Course (${formatDisplayDate(latestDate)} - शनिवार): ${latestCourse}`;
+marqueeEl.textContent = `Latest Weekly Course (${formatDisplayDate(latestDate)} - शनिवार): ${latestCourse}`;
+
     }
 
     function handleAdminButtonClick() {
